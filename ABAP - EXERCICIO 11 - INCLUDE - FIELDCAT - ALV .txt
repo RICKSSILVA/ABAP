@@ -1,0 +1,302 @@
+EXERC11 
+
+
+____________________________________________________________________________
+REPORT ZABAP_EXERC11_16.
+
+INCLUDE ZABAPI_EXERC11_16_TOP.
+INCLUDE ZABAPI_EXERC11_16_PBO.
+INCLUDE ZABAPI_EXERC11_16_PAI.
+INCLUDE ZABAPI_EXERC11_16_F01.
+
+
+
+
+START-OF-SELECTION.
+
+CALL SCREEN 9000.
+
+*&SPWizard: Data incl. inserted by SP Wizard. DO NOT CHANGE THIS LINE!
+INCLUDE ZABAP_EXERC11_16_TC .
+
+____________________________________________________________________________
+
+*&---------------------------------------------------------------------*
+*& Include          ZABAPI_EXERC11_16_TOP
+*&---------------------------------------------------------------------*
+TABLES: ZFILME16,
+      ZCLIENTE16,
+      ZLOCADORA16.
+	  
+	  ____________________________________________________________________________
+	  
+	  MODULE preenche_tela OUTPUT.
+SET PF-STATUS 'STATUS'.
+* SET TITLEBAR 'xxx'.
+
+  PERFORM F_preenche_tela.
+
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_9000 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE STATUS OUTPUT.
+SET PF-STATUS 'STATUS'.
+* SET TITLEBAR 'xxx'.
+ENDMODULE.
+
+
+____________________________________________________________________________
+
+
+*&---------------------------------------------------------------------*
+*& Include          ZABAPI_EXERC11_16_PAI
+*&---------------------------------------------------------------------*
+MODULE user_command_9000 INPUT.
+CASE SY-UCOMM.
+
+  WHEN 'VOLTAR' OR 'ABORTAR' OR 'CANCELAR'.
+    SET SCREEN 0.
+    LEAVE SCREEN.
+
+  WHEN 'ALUGAR'.
+    DATA: V_RESPOSTA(1) TYPE C.
+
+    CALL FUNCTION 'POPUP_TO_CONFIRM'
+      EXPORTING
+*       TITLEBAR                    = ' '
+*       DIAGNOSE_OBJECT             = ' '
+        text_question               = 'Desejar realmente salvar'
+        TEXT_BUTTON_1               = 'SIM'
+        ICON_BUTTON_1               = 'ICON_CHECKED'
+        TEXT_BUTTON_2               = 'NÃO'
+        ICON_BUTTON_2               = 'ICON_INCOMPLETE'
+        DEFAULT_BUTTON              = '2'
+*       DISPLAY_CANCEL_BUTTON       = 'X'
+*       USERDEFINED_F1_HELP         = ' '
+*       START_COLUMN                = 25
+*       START_ROW                   = 6
+*       POPUP_TYPE                  =
+*       IV_QUICKINFO_BUTTON_1       = ' '
+*       IV_QUICKINFO_BUTTON_2       = ' '
+       IMPORTING
+       ANSWER                      = V_RESPOSTA
+*     TABLES
+*       PARAMETER                   =
+     EXCEPTIONS
+       TEXT_NOT_FOUND              = 1
+       OTHERS                      = 2
+              .
+    IF sy-subrc <> 0.
+* Implement suitable error handling here
+    ENDIF.
+    IF v_resposta ='1'.
+      PERFORM F_ALUGAR.
+      message 'Dados salvos com sucesso' type 'S'.
+
+      IF SY-SUBRC IS INITIAL.
+        COMMIT WORK AND WAIT.
+        CALL SCREEN 9100.
+       CLEAR ZFILME16.
+       CLEAR ZCLIENTE16.
+      ENDIF.
+    else.
+
+     message 'AÇÃO CANCELADA' TYPE 'S'.
+
+        ROLLBACK WORK.
+      CLEAR ZFILME16.
+      CLEAR ZCLIENTE16.
+    ENDIF.
+     "PERFORM F_ALUGAR.
+
+   WHEN 'CONSULTAR'.
+     MESSAGE 'VAMOS REALIZAR A CONSULTA TESTE' TYPE 'I'.
+
+   WHEN OTHERS.
+
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_9200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_9200 INPUT.
+CASE SY-UCOMM.
+
+  WHEN 'VOLTAR' OR 'ABORTAR' OR 'CANCELAR'.
+    SET SCREEN 0.
+    LEAVE SCREEN.
+
+  WHEN 'INICIAL'.
+
+  CALL SCREEN 9000.
+
+
+  WHEN OTHERS.
+
+ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_9100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_9100 INPUT.
+CASE SY-UCOMM.
+  WHEN 'VOLTAR' OR 'ABORTAR' OR 'CANCELAR'.
+    SET SCREEN 0.
+    LEAVE SCREEN.
+  WHEN 'CONSULTAR'.
+
+   " PERFORM CONSULTA.
+
+
+  CALL SCREEN 9200.
+  WHEN OTHERS.
+  ENDCASE.
+ENDMODULE.
+
+____________________________________________________________________________
+
+
+**&---------------------------------------------------------------------*
+**& Include          ZABAPI_EXERC11_16_F01
+**&---------------------------------------------------------------------*
+**&---------------------------------------------------------------------*
+*
+
+FORM F_preenche_tela.
+
+PERFORM f_select.
+
+  IF ZCLIENTE16-COD_CLIENTE16 IS NOT INITIAL .
+    LOOP AT SCREEN.
+    IF SCREEN-NAME = 'ZCLIENTE16-NOME'
+       OR SCREEN-NAME ='ZCLIENTE16-VIP'.
+      SCREEN-INVISIBLE = 0.
+      MODIFY SCREEN.
+    ENDIF.
+    ENDLOOP.
+
+  ELSE.
+    LOOP AT SCREEN.
+    IF SCREEN-NAME = 'ZCLIENTE16-NOME'
+       OR SCREEN-NAME ='ZCLIENTE16-VIP'.
+      SCREEN-INVISIBLE = 1.
+
+       MODIFY SCREEN.
+    ENDIF.
+    ENDLOOP.
+
+   ENDIF.
+
+IF ZFILME16-COD_FILME IS NOT INITIAL.
+  LOOP AT SCREEN.
+  IF SCREEN-NAME = 'ZFILME16-NOME' .
+     SCREEN-INVISIBLE = 0.
+     MODIFY SCREEN.
+  ENDIF.
+  ENDLOOP.
+ ELSE.
+   LOOP AT SCREEN.
+   IF SCREEN-NAME = 'ZFILME16-NOME' .
+     SCREEN-INVISIBLE = 1.
+     MODIFY SCREEN.
+   ENDIF.
+  ENDLOOP.
+
+ENDIF.
+
+IF ZCLIENTE16-COD_CLIENTE16 IS INITIAL OR ZFILME16-COD_FILME IS  INITIAL.
+  LOOP AT SCREEN.
+     IF SCREEN-NAME = 'ALUGAR'.
+      SCREEN-INVISIBLE = 1.
+      MODIFY SCREEN.
+   ENDIF.
+   ENDLOOP.
+ELSE.
+  LOOP AT SCREEN.
+   IF SCREEN-NAME = 'ALUGAR'.
+      SCREEN-INVISIBLE = 0.
+           MODIFY SCREEN.
+   ENDIF.
+    ENDLOOP.
+ENDIF.
+"ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_select_cliente
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_select.
+SELECT SINGLE *
+  FROM ZCLIENTE16
+  WHERE COD_CLIENTE16 = ZCLIENTE16-COD_CLIENTE16.
+
+
+
+SELECT SINGLE *
+  FROM ZFILME16
+  WHERE COD_FILME = ZFILME16-COD_FILME.
+
+
+
+ ENDFORM.
+
+FORM F_ALUGAR.
+
+DATA: W_FILMES TYPE ZLOCADORA16.
+
+  W_FILMES-COD_CLIENTE = ZCLIENTE16-COD_CLIENTE16.
+  W_FILMES-COD_FILME  = ZFILME16-COD_FILME.
+  W_FILMES-DATA = SY-DATUM.
+  W_FILMES-HORA = SY-UZEIT.
+
+  INSERT ZLOCADORA16 FROM W_FILMES.
+
+*    IF sy-subrc IS INITIAL.
+*      "COMMIT WORK AND WAIT.
+*
+*     " MESSAGE 'OK' TYPE 'S'.
+*      clear zfilme16.
+*      clear zcliente16.
+*    ELSE.
+*      ROLLBACK WORK.
+*    ENDIF.
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CONSULTA
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM consulta.
+
+*SELECT  DATA, HORA, FILME, PAGO
+*   FROM ZLOCADORA16
+*   WHERE COD_CLIENTE = ZCLIENTE16-COD_CLIENTE16.
+*
+*
+*
+*ENDIF..
+*
+*ENDIF.
+ENDFORM.

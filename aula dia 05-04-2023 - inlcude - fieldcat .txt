@@ -1,0 +1,254 @@
+padrao  ZCCAAB_XXXXX
+
+z: FIXO
+
+cc : codigo do projeto 
+
+aa : area funcional - ver ssecção 2.2
+
+b: tipo de programa - ver seção 2.3
+
+xxxxx
+CRIAR AS INCLUDES NO REPORT
+INCLUDE  TOP -> DECLARAR AS VARIAVEIS GLOBAIS.
+INCLUDE  SEL -> DECLARAR AS TELAS.
+INCLUDE  F01 -. DECLARAR OS PARAMETERS.
+SE16
+___________________________________________________________________________________
+*&---------------------------------------------------------------------*
+*& Report ZABAPR_AULAS_16
+*&---------------------------------------------------------------------*
+*& AULA DE RELATORIO ALV - 05-04-2023
+*&---------------------------------------------------------------------*
+REPORT ZABAPR_AULAS_16.
+
+INCLUDE ZABAPI_AULAS_16_TOP. "DECLARAR AS VARIAVEIS GLOBAIS.
+
+INCLUDE ZABAPI_AULAS_16_SEL. " DECLARA A TELAS. - SELECTION
+
+INCLUDE ZABAPI_AULAS_16_F01. "DECLARA-
+
+START-OF-SELECTION.
+
+PERFORM f_select_data.
+
+PERFORM f_alv.
+__________________________________________________________________________________
+*&---------------------------------------------------------------------*
+*& Include          ZABAPI_AULAS_16_TOP
+*&---------------------------------------------------------------------*
+TABLES: VBRK.
+
+TYPES: BEGIN OF TY_VBRK,
+    VBELN TYPE VBRK-VBELN,
+    FKDAT TYPE VBRK-FKDAT,
+    BUKRS TYPE VBRK-BUKRS,
+    ERNAM TYPE VBRK-ERNAM,
+    ERDAT TYPE VBRK-ERDAT,
+
+  END OF TY_VBRK.
+
+"declaração de variaveis
+DATA: v_teste TYPE MARA-MATNR.
+
+"declaração de tabelas internas.
+data: t_VBRK type table oF TY_VBRK.
+DATA: T_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV.
+
+"DECLARAÇÃO DE WORK AREA.
+
+DATA: WA_VBRK TYPE TY_VBRK.
+
+_______________________________________________________________________________________
+*&---------------------------------------------------------------------*
+*& Include          ZABAPI_AULAS_16_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form f_select_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_select_data .
+
+"data tY_vbrk type table of VBRK.
+
+SELECT VBELN FKDAT BUKRS ERNAM ERDAT
+  FROM VBRK
+  INTO TABLE T_vbrk
+  WHERE VBELN IN S_FAT.
+
+  IF SY-SUBRC IS INITIAL.
+
+      ENDIF.
+
+ENDFORM.
+
+
+
+FORM f_alv.
+
+PERFORM F_preenceh_FIELDCAT.
+
+
+   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+     EXPORTING
+*        I_INTERFACE_CHECK                 = ' '
+*        I_BYPASSING_BUFFER                = ' '
+*        I_BUFFER_ACTIVE                   = ' '
+         I_CALLBACK_PROGRAM                = SY-REPID
+*        I_CALLBACK_PF_STATUS_SET          = ' '
+*        I_CALLBACK_USER_COMMAND           = ' '
+*        I_CALLBACK_TOP_OF_PAGE            = ' '
+*        I_CALLBACK_HTML_TOP_OF_PAGE       = ' '
+*        I_CALLBACK_HTML_END_OF_LIST       = ' '
+*        I_STRUCTURE_NAME                  =
+*        I_BACKGROUND_ID                   = ' '
+*        I_GRID_TITLE                      =
+*        I_GRID_SETTINGS                   =
+*        IS_LAYOUT                         =
+         IT_FIELDCAT                       = T_FIELDCAT()
+*        IT_EXCLUDING                      =
+*        IT_SPECIAL_GROUPS                 =
+*        IT_SORT                           =
+*        IT_FILTER                         =
+*        IS_SEL_HIDE                       =
+*        I_DEFAULT                         = 'X'
+*        I_SAVE                            = ' '
+*        IS_VARIANT                        =
+*        IT_EVENTS                         =
+*        IT_EVENT_EXIT                     =
+*        IS_PRINT                          =
+*        IS_REPREP_ID                      =
+*        I_SCREEN_START_COLUMN             = 0
+*        I_SCREEN_START_LINE               = 0
+*        I_SCREEN_END_COLUMN               = 0
+*        I_SCREEN_END_LINE                 = 0
+*        I_HTML_HEIGHT_TOP                 = 0
+*        I_HTML_HEIGHT_END                 = 0
+*        IT_ALV_GRAPHICS                   =
+*        IT_HYPERLINK                      =
+*        IT_ADD_FIELDCAT                   =
+*        IT_EXCEPT_QINFO                   =
+*        IR_SALV_FULLSCREEN_ADAPTER        =
+*        O_PREVIOUS_SRAL_HANDLER           =
+*      IMPORTING
+*        E_EXIT_CAUSED_BY_CALLER           =
+*        ES_EXIT_CAUSED_BY_USER            =
+       TABLES
+         t_outtab                          = T_VBRK
+*      EXCEPTIONS
+*        PROGRAM_ERROR                     = 1
+*        OTHERS                            = 2
+               .
+     IF sy-subrc <> 0.
+* Implement suitable error handling here
+     ENDIF.
+endform.
+*&---------------------------------------------------------------------*
+*& Form F_PREENCEH_FIELDCAT
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_preenceh_fieldcat .
+
+DATA LWA_FIELDCAT TYPE  SLIS_FIELDCAT_ALV.
+
+CLEAR LWA_FIELDCAT.
+
+LWA_FIELDCAT-TABNAME = 'T_VBRK'.
+LWA_FIELDCAT-FIELDNAME = 'VBELN'.
+LWA_FIELDCAT-COL_POS = '1'.
+LWA_FIELDCAT-SELTEXT_S = 'FAT'.
+LWA_FIELDCAT-SELTEXT_M = 'FATURA'.
+LWA_FIELDCAT-SELTEXT_L = 'NUMERO DA FATURA'.
+
+APPEND LWA_FIELDCAT TO T_FIELDCAT.
+
+
+CLEAR LWA_FIELDCAT.
+
+LWA_FIELDCAT-TABNAME = 'T_VBRK'.
+LWA_FIELDCAT-FIELDNAME = 'ERNAM'.
+LWA_FIELDCAT-COL_POS = '2'.
+LWA_FIELDCAT-SELTEXT_S = 'NOME'.
+LWA_FIELDCAT-SELTEXT_M = 'NOME USER - MEDIO'.
+LWA_FIELDCAT-SELTEXT_L = 'NOME USER - LONGO '.
+
+APPEND LWA_FIELDCAT TO T_FIELDCAT.
+
+
+CLEAR LWA_FIELDCAT.
+
+LWA_FIELDCAT-TABNAME = 'T_VBRK'.
+LWA_FIELDCAT-FIELDNAME = 'BUKRS'.
+LWA_FIELDCAT-COL_POS = '3'.
+LWA_FIELDCAT-SELTEXT_S = 'CODE COMPANY'.
+LWA_FIELDCAT-SELTEXT_M = 'CODE COMPANY - MEDIO '.
+LWA_FIELDCAT-SELTEXT_L = 'CODE COMPANY - LONGO'.
+
+APPEND LWA_FIELDCAT TO T_FIELDCAT.
+
+CLEAR LWA_FIELDCAT.
+
+LWA_FIELDCAT-TABNAME = 'T_VBRK'.
+LWA_FIELDCAT-FIELDNAME = 'FKDAT'.
+LWA_FIELDCAT-COL_POS = '4'.
+LWA_FIELDCAT-SELTEXT_S = 'DATE B'.
+LWA_FIELDCAT-SELTEXT_M = 'DATE BILLING '.
+LWA_FIELDCAT-SELTEXT_L = 'DATE BILLING '.
+
+APPEND LWA_FIELDCAT TO T_FIELDCAT.
+
+CLEAR LWA_FIELDCAT.
+
+LWA_FIELDCAT-TABNAME = 'T_VBRK'.
+LWA_FIELDCAT-FIELDNAME = 'ERDAT'.
+LWA_FIELDCAT-COL_POS = '5'.
+LWA_FIELDCAT-SELTEXT_S = 'DATE CREATED'.
+LWA_FIELDCAT-SELTEXT_M = 'DATE ON WHICH CREATED '.
+LWA_FIELDCAT-SELTEXT_L = 'DATE ON WHICH THE RECORD WAS CREATED '.
+
+APPEND LWA_FIELDCAT TO T_FIELDCAT.
+
+ENDFORM.
+___________________________________________________________________________________
+
+*&---------------------------------------------------------------------*
+*& Include          ZABAPI_AULA8_16_SEL
+*&---------------------------------------------------------------------*
+
+SELECT-OPTIONS: S_FAT FOR VBRK-VBELN.
+
+
+
+
+
+_______________________________________________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

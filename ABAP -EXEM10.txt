@@ -1,0 +1,223 @@
+*&---------------------------------------------------------------------*
+*& Report ZABAP_EXEM10_18
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZABAP_EXEM10_18.
+
+INCLUDE ZABAP_EXEM10_18_TOP.  "Declarações Globais
+INCLUDE ZABAP_EXEM10_18_PBO.  "Before Output
+INCLUDE ZABAP_EXEM10_18_PAI.  "After Output
+INCLUDE ZABAP_EXEM10_18_F01.  "Performs
+
+START-OF-SELECTION.
+
+  CALL SCREEN 9000.
+
+*&SPWizard: Data incl. inserted by SP Wizard. DO NOT CHANGE THIS LINE!
+INCLUDE ZABAP_EXEM10_18_TC .
+-------------------------------------------------------------------------------
+*&---------------------------------------------------------------------*
+*& Include          ZABAP_EXEM10_18_TOP
+*&---------------------------------------------------------------------*
+
+TABLES: ZFILME_18.
+
+
+-----------------------------------------------------------------------------
+*&---------------------------------------------------------------------*
+*& Include          ZABAP_EXEM10_18_PBO
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module PREENCHE_TELA OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE preenche_tela OUTPUT.
+
+  perform f_preenche_tela.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_9000 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE status_9000 OUTPUT.
+ SET PF-STATUS 'STATUS_9000'.
+* SET TITLEBAR 'xxx'.
+ENDMODULE.
+
+
+-----------------------------------------------------------------------------
+*&---------------------------------------------------------------------*
+*& Include          ZABAP_EXEM10_18_PAI
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_9000  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_9000 INPUT.
+
+  CASE sy-ucomm.
+    when 'BOTAO'.
+      perform f_botao_botao.
+    when 'PROXIMA'.
+      CALL SCREEN 9100.
+    when 'SALVAR'.
+      perform f_SALVAR.
+    when 'VOLTAR' or 'ABORTAR' or 'CANCELAR'.
+      SET SCREEN 0.
+      LEAVE SCREEN.
+    when 'BTN1'.
+      MESSAGE 'BOTAO PRECIONADO' type 'S'.
+    when others.
+
+  ENDCASE.
+
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_9100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_9100 INPUT.
+
+  CASE sy-ucomm.
+    WHEN 'ANTERIOR'.
+*      CALL SCREEN 9000.
+      SET SCREEN 0.
+      LEAVE SCREEN.
+
+    when 'SALVAR'.
+      perform f_SALVAR.
+    when 'VOLTAR' or 'ABORTAR' or 'CANCELAR'.
+      SET SCREEN 0.
+      LEAVE SCREEN.
+    when 'BTN1'.
+      MESSAGE 'BOTAO PRECIONADO' type 'S'.
+    when others.
+
+  ENDCASE.
+
+ENDMODULE.
+
+-------------------------------------------------------------------------
+
+*&---------------------------------------------------------------------*
+*& Include          ZABAP_EXEM10_18_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form f_preenche_tela
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_preenche_tela .
+
+*  "se o checkbox estiver marcado,
+*  " vamos mostrar os radio buttons;
+*  "senão, não exibe;
+*
+*  IF V_CHECKBOX IS NOT INITIAL. "Preenchido
+*
+*    "Altera os campos da tela
+*    LOOP AT SCREEN.
+*      IF SCREEN-NAME = 'V_RADIO'
+*      OR SCREEN-NAME = 'V_RADIO2'
+*      OR SCREEN-NAME = 'V_RADIO3'.
+*        SCREEN-INVISIBLE = 0. "Visível
+*      ENDIF.
+*      MODIFY SCREEN.
+*    ENDLOOP.
+*
+*  ELSE.                         "Vazio
+*
+*    "Altera os campos da tela
+*    LOOP AT SCREEN.
+*      IF SCREEN-NAME = 'V_RADIO'
+*      OR SCREEN-NAME = 'V_RADIO2'
+*      OR SCREEN-NAME = 'V_RADIO3'.
+*        SCREEN-INVISIBLE = 1. "Invisível
+*      ENDIF.
+*      MODIFY SCREEN.
+*    ENDLOOP.
+*
+*  ENDIF.
+*
+*"ZFILME_18-COD_FILME
+*"ZFILME_18-NOME
+*
+**  SELECT SINGLE *
+**    FROM ZFILME_18
+**   WHERE COD_FILME = ZFILME_18-COD_FILME.
+**
+**  INSERT ZFILME_18.
+**  MODIFY ZFILME_18.
+**  DELETE ZFILME_18.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_botao_botao
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_botao_botao .
+
+*  "Botão de ação foi clicado
+*  "Pegar o valor informado na caixa de texto
+*  " V_CAMPO e aparecer uma mensagem com ele
+*
+*
+*  "Entrada & & & existente (entrada correta)
+*  message S057(00) WITH V_CAMPO.
+*
+*  write v_campo.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_SALVAR
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_SALVAR .
+
+  data: v_resposta(1) type c.
+
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      text_question               = 'Deseja realmente salvar???'
+      TEXT_BUTTON_1               = 'Sim'
+      ICON_BUTTON_1               = 'ICON_CHECKED'
+      TEXT_BUTTON_2               = 'Não'
+      ICON_BUTTON_2               = 'ICON_INCOMPLETE'
+      DEFAULT_BUTTON              = '2'
+    IMPORTING
+      ANSWER                      = v_resposta
+   EXCEPTIONS
+     TEXT_NOT_FOUND              = 1
+     OTHERS                      = 2
+            .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  if v_resposta = '1'.  "Sim
+    message 'Dados salvos com sucesso!' type 'S'.
+  else.                 "Não
+    message 'Ação cancelada' type 'S'
+     DISPLAY LIKE 'E'.
+  ENDIF.
+
+ENDFORM.

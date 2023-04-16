@@ -1,0 +1,32 @@
+*&---------------------------------------------------------------------*
+*& Report Z_AULA2_04_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT Z_AULA2_04_16.
+
+
+SELECTION-SCREEN: BEGIN OF BLOCK B1 WITH FRAME TITLE TEXT-001.
+PARAMETERS: p_rad01 RADIOBUTTON GROUP g1,
+            p_rad02 RADIOBUTTON GROUP g1,
+            p_rad03 RADIOBUTTON GROUP g1.
+
+
+
+SELECTION-SCREEN: END OF BLOCK B1.
+
+
+SELECTION-SCREEN:BEGIN OF BLOCK B2 WITH FRAME TITLE TEXT-002.
+PARAMETERS: p_opt01 RADIOBUTTON GROUP g2,
+            p_opt02 RADIOBUTTON GROUP g2.
+SELECTION-SCREEN: END OF  BLOCK B2.
+
+SELECTION-SCREEN: BEGIN OF BLOCK B3 WITH FRAME TITLE TEXT-003.
+PARAMETERS: p_chk1 as CHECKBOX,
+            p_chk2 as CHECKBOX,
+            p_chk3 as CHECKBOX,
+            p_chk4 as CHECKBOX,
+            p_chk5 as CHECKBOX.
+
+SELECTION-SCREEN: end of BLOCK b3.
+START-OF-SELECTION.

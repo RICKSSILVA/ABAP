@@ -1,0 +1,61 @@
+*&---------------------------------------------------------------------*
+REPORT Z_EXERCICIO_03_01_16.
+
+DATA v_cont TYPE i.
+data v_duplo TYPE I.
+
+v_cont = 1.
+v_duplo = 1.
+PARAMETERS: quant TYPE i OBLIGATORY.
+PARAMETERS: pg1 RADIOBUTTON GROUP g1,
+            pg2 RADIOBUTTON GROUP g1.
+
+PARAMETERS: chk AS CHECKBOX.
+
+
+CASE  'X'.
+
+   WHEN pg1.
+
+DO.
+
+IF v_cont <= quant.
+
+  IF chk = 'X'.
+
+   write:/' write', v_cont COLOR 6.
+   v_cont = v_cont + 1.
+  ELSE.
+    write:/' write', v_cont.
+   v_cont = v_cont + 1.
+  ENDIF.
+
+ELSE.
+   EXIT.
+
+ENDIF.
+
+ENDDO.
+
+
+  WHEN pg2.
+
+
+WHILE v_duplo <= quant.
+
+    IF chk = 'X'.
+
+      write: / ' while ', v_duplo COLOR 6.
+      v_duplo = v_duplo + 1.
+
+    ELSE.
+      write: / ' while ', v_duplo.
+      v_duplo = v_duplo + 1.
+    ENDIF.
+
+
+
+ENDWHILE.
+
+
+ENDCASE.

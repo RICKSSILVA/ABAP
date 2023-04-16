@@ -1,0 +1,55 @@
+*&---------------------------------------------------------------------*
+*& Report ZAULA2_02_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZAULA2_02_16.
+DATA: V_INTER TYPE I.
+data: v_float(10) type p DECIMALS 2.
+DATA: v_futuro type dats.
+
+
+**V_INTEIRO=P_INTEIRO +10.
+
+PARAMETERS: p_inter type i.
+PARAMETERS: p_dia type dats. " data (yyyymmdd).
+
+START-OF-SELECTION.
+
+V_INTER = p_inter + 10.
+WRITE: 'SOMA ', V_INTER.
+
+V_INTER = p_inter - 10.
+WRITE:'Diminuicao', / V_INTER.
+
+v_float = p_inter / 10.
+
+write:/'Div', v_float.
+
+**( data (YYYYMMDD)
+write: / 'Data', p_dia.
+
+v_futuro = p_dia + p_inter.
+
+
+
+ write : / 'este número é'.
+ IF p_inter >= 10.
+   write: / 'Maior que 10'.
+
+ ENDIF.
+
+IF p_inter < 10.
+WRITE: / 'Menor que 10'.
+
+ENDIF.
+
+
+IF p_inter < 8.
+  write: / 'menor que 8'.
+ELSE.
+  write:/ 'Mairo que 8'.
+
+
+DATUM - É  A DATA DO DIA
+USEIT - É A HORA

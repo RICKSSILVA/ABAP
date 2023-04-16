@@ -1,0 +1,34 @@
+29-02-2023.
+
+
+
+while v_contador <= p_vezes.
+
+	write: /'while. endwhile'.
+	
+	v_contador
+	
+	PARAMETERS: p_cor(15) TYPE C.
+
+START-OF-SELECTION.
+"vermelho - verde e azul.
+
+if p_cor ='verde'.
+  WRITE:/'ESCREVENDO COLORIDO' COLOR 5. "6=VERMELHO
+ENDIF.
+
+if p_cor = 'vermelho'.
+WRITE:/'ESCREVENDO COLORIDO' COLOR 6. "6=VERMELHO
+endif.
+
+CASE  p_cor..
+  WHEN 'VERMELHO'.
+WRITE:/'ESCREVENDO COLORIDO' COLOR 6. "6=VERMELHO
+
+  WHEN 'VERDE'.
+WRITE:/'ESCREVENDO COLORIDO' COLOR 5. "6=VERMELHO
+  WHEN 'AZUL'.
+WRITE:/'ESCREVENDO COLORIDO' COLOR 4. "6=VERMELHO
+  WHEN OTHERS.
+WRITE:/'ESCREVENDO COLORIDO' COLOR 2. "6=VERMELHO
+ENDCASE.

@@ -1,0 +1,34 @@
+*&---------------------------------------------------------------------*
+*& Report Z_EXEC01_02_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT Z_EXEC01_02_16.
+
+
+
+SELECTION-SCREEN: BEGIN OF BLOCK B1 WITH FRAME TITLE TEXT-001.
+PARAMETERS: p_rad01 RADIOBUTTON GROUP g1,
+            p_rad02 RADIOBUTTON GROUP g1,
+            p_rad03 RADIOBUTTON GROUP g1.
+
+
+
+SELECTION-SCREEN: END OF BLOCK B1.
+
+
+IF p_rad01 is not INITIAL.
+  write:' a cor selecionada é amarelo'.
+
+ENDIF.
+
+if p_rad02 is not INITIAL.
+  write: 'a cor selecionada é Azul'.
+
+endif.
+
+if p_rad03 is NOT initial.
+  write: 'a cor selecionada é Vermelha'.
+ENDIF.
+
+START-OF-SELECTION.

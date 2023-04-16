@@ -1,0 +1,306 @@
+*&---------------------------------------------------------------------*
+*& Report ZABAP_EXERC13_16
+*&---------------------------------------------------------------------*
+*&-*
+REPORT ZABAP_EXERC13_16.
+TABLES: ZCLIENTE16.
+
+SELECTION-SCREEN: BEGIN OF BLOCK B1 WITH FRAME TITLE TEXT-001.
+ SELECT-OPTIONS: s_clie for zcliente16-cod_cliente16.
+SELECTION-SCREEN: END OF BLOCK B1.
+data: t_cliente type TABLE of zcliente16.
+DATA: WT_CLIENTE TYPE ZCLIENTE16.
+DATA: T_OUTPUT2 TYPE TABLE OF ZESTRUTURA_CLIENTE16.
+DATA  LW_OUTPUT2 TYPE  ZESTRUTURA_CLIENTE16.
+DATA: lW_LAYOUT TYPE SLIS_LAYOUT_ALV.
+DATA: lw_layout_relatorio type SLIS_LAYOUT_ALV.
+
+START-OF-SELECTION.
+PERFORM F_SELECAO.
+
+PERFORM F_ALV.
+*&---------------------------------------------------------------------*
+*& Form F_SELECAO
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_selecao .
+
+SELECT *
+
+FROM ZCLIENTE16
+INTO TABLE T_CLIENTE
+WHERE COD_CLIENTE16 IN S_CLIE.
+IF SY-SUBRC IS INITIAL.
+ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_ALV
+*&---------------------------------------------------------------------*
+
+FORM f_alv .
+DATA: LT_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV.
+
+lW_LAYOUT-ZEBRA = 'X'.
+lW_LAYOUT-COLWIDTH_OPTIMIZE = 'X'.
+lW_LAYOUT-BOX_FIELDNAME = 'MARK'.
+
+CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+ EXPORTING
+*   I_PROGRAM_NAME               =
+*   I_INTERNAL_TABNAME           =
+   I_STRUCTURE_NAME             = 'ZCLIENTE16'
+*   I_CLIENT_NEVER_DISPLAY       = 'X'
+*   I_INCLNAME                   =
+*   I_BYPASSING_BUFFER           =
+*   I_BUFFER_ACTIVE              =
+  CHANGING
+    ct_fieldcat                  = LT_FIELDCAT
+ EXCEPTIONS
+   INCONSISTENT_INTERFACE       = 1
+   PROGRAM_ERROR                = 2
+   OTHERS                       = 3
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+"DELETE LT_FIELDCAT WHERE FIELDNAME = 'MARK'.
+
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+ EXPORTING
+   is_layout                         =  Lw_layout
+   I_CALLBACK_PROGRAM                =  SY-CPROG
+   I_CALLBACK_PF_STATUS_SET          = 'F_PF_STATUS_SET'
+   I_CALLBACK_USER_COMMAND           = 'F_USER_COMMAND'
+   IT_FIELDCAT                       =   LT_FIELDCAT
+  TABLES
+    t_outtab                          = T_CLIENTE
+ EXCEPTIONS
+   PROGRAM_ERROR                     = 1
+   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+DELETE LT_FIELDCAT WHERE FIELDNAME = 'MARK'.
+
+ENDFORM.
+FORM F_PF_STATUS_SET using LIST.
+
+  SET PF-STATUS 'STATUS_GUI_ALV'.
+ENDFORM.
+
+
+FORM F_USER_COMMAND USING UCOMM VARIABLE TYPE SLIS_SELFIELD.
+    CASE SY-UCOMM.
+
+    WHEN 'SHOW'.
+      PERFORM F_CADASTRAR.
+      VARIABLE-REFRESH = 'X'.
+   WHEN 'CADASTRAR'.
+      PERFORM F_CADASTRAR.
+      VARIABLE-REFRESH = 'X'.
+      WHEN OTHERS.
+     ENDCASE.
+
+ENDFORM.
+
+FORM F_CADASTRAR.
+
+loop at t_cliente into data(lw_out).
+
+  case lw_out-mark.
+
+    when 'X'.
+            DATA: lt_batch_input TYPE TABLE OF bdcdata.
+            DATA: lw_batch_input TYPE bdcdata.
+            DATA: LT_MENSAGENS TYPE TABLE OF BDCMSGCOLL.
+            DATA: LW_MENSAGENS TYPE BDCMSGCOLL.
+
+            lw_batch_input-program  = 'SAPLBUS_LOCATOR'.
+            lw_batch_input-dynpro   = '3000'.
+            lw_batch_input-dynbegin = 'X'.
+            lw_batch_input-fnam     = ''.
+            lw_batch_input-fval     = ''.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BDC_OKCODE'.
+            lw_batch_input-fval     = '=SCREEN_1000_CRE_PERS'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BUS_LOCA_SRCH01-SEARCH_TYPE'.
+            lw_batch_input-fval     = '1'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BUS_LOCA_SRCH01-SEARCH_ID'.
+            lw_batch_input-fval     = '1'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BUS_LOCA_SRCH01-MAXHIT'.
+            lw_batch_input-fval     = '100'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = 'SAPLBUS_LOCATOR'.
+            lw_batch_input-dynpro   = '3000'.
+            lw_batch_input-dynbegin = 'X'.
+            lw_batch_input-fnam     = ''.
+            lw_batch_input-fval     = ''.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BDC_OKCODE'.
+            lw_batch_input-fval     = '=BUS_MAIN_SAVE'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BUT000-NAME_FIRST'.
+            lw_batch_input-fval     = LW_OUT-NOME.
+            APPEND lW_BATCH_INPUT TO lT_BATCH_INPUT.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BUT000-NAME_LAST'.
+            lw_batch_input-fval     = LW_OUT-SOBRENOME.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BUS000FLDS-BU_SORT1_TXT'.
+            lw_batch_input-fval     = LW_OUT-SOBRENOME.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'SZA11_0100-TEL_COUNTR'.
+            lw_batch_input-fval     = 'BR'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'SZA11_0100-MOB_COUNTR'.
+            lw_batch_input-fval     = 'BR'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'SZA11_0100-FAX_COUNTR'.
+            lw_batch_input-fval     = 'BR'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+          CALL TRANSACTION 'BP' USING lt_batch_input MODE 'N'
+                MESSAGES INTO LT_MENSAGENS.
+          CLEAR LT_BATCH_INPUT.
+          IF SY-SUBRC IS INITIAL.
+
+              READ TABLE LT_MENSAGENS INTO LW_MENSAGENS
+              WITH KEY MSGID = 'R1'
+                       MSGNR = 425.
+
+              IF SY-SUBRC IS INITIAL.
+               "   MESSAGE LW_MENSAGENS-msgv1 TYPE 'I'.
+                  MOVE LW_MENSAGENS-MSGV1 TO LW_OUT-COD_PARCEIRO.
+                   MODIFY T_CLIENTE FROM LW_OUT.
+
+*                    MOVE  LW_OUT-COD_CLIENTE16 TO LW_OUTPUT2-COD_CLIENTE16.
+*                    MOVE  LW_OUT-NOME TO LW_OUTPUT2-NOME.
+*                    MOVE  LW_OUT-SOBRENOME TO LW_OUTPUT2-SOBRENOME.
+*                    MOVE  LW_OUT-VIP TO LW_OUTPUT2-VIP.
+*                    MOVE  LW_MENSAGENS-MSGV1 TO LW_OUTPUT2-COD_PARCEIRO.
+*                    APPEND LW_OUTPUT2 TO t_output2.
+                    CLEAR LT_MENSAGENS.
+                  " PERFORM F_CHAMA_RELATORIO.
+              ENDIF.
+          endif.
+       WHEN OTHERS.
+
+     ENDCASE.
+
+     ENDLOOP.
+
+            "MESSAGE 'CADASTAR' TYPE 'I'
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_CHAMA_RELATORIO
+*&---------------------------------------------------------------------*
+FORM f_chama_relatorio .
+  DATA: LT_FIELDCAT2 TYPE SLIS_T_FIELDCAT_ALV.
+
+
+  CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+   EXPORTING
+*     I_PROGRAM_NAME               =
+*     I_INTERNAL_TABNAME           =
+      I_STRUCTURE_NAME             = 'ZESTRUTURA_CLIENTE16'
+*     I_CLIENT_NEVER_DISPLAY       = 'X'
+*     I_INCLNAME                   =
+*     I_BYPASSING_BUFFER           =
+*     I_BUFFER_ACTIVE              =
+    CHANGING
+      ct_fieldcat                  = LT_FIELDCAT2
+   EXCEPTIONS
+     INCONSISTENT_INTERFACE       = 1
+     PROGRAM_ERROR                = 2
+     OTHERS                       = 3
+            .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+   EXPORTING
+
+    I_CALLBACK_PROGRAM                = SY-CPROG
+    IS_LAYOUT                         = lw_layout_relatorio
+    IT_FIELDCAT                       =  LT_FIELDCAT2
+
+    TABLES
+      t_outtab                          = t_output2
+   EXCEPTIONS
+     PROGRAM_ERROR                     = 1
+     OTHERS                            = 2
+            .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+
+
+
+ENDFORM.

@@ -1,0 +1,98 @@
+*&---------------------------------------------------------------------*
+*& Report Z_EXERCICIO_03_01_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT Z_EXERCICIO_04_03_16.
+
+DATA v_cont TYPE i.
+data v_duplo TYPE I.
+data teste type i.
+data teste1 type i.
+DATA i002.
+
+v_cont = 0.
+v_cont = v_cont + 1.
+
+PARAMETERS: quant TYPE I OBLIGATORY.
+PARAMETERS: pg1 RADIOBUTTON GROUP g1,
+            pg2 RADIOBUTTON GROUP g1.
+PARAMETERS: chk AS CHECKBOX,
+            chk1 AS CHECKBOX.
+START-OF-SELECTION.
+
+if quant = 0.
+    MESSAGE I002(ZMENSAGEM16)
+    DISPLAY LIKE 'I'
+    WITH quant.
+ENDIF.
+
+CASE  'X'.
+   WHEN pg1. "FAZ O DO - USANDO O RADIOBUTTON
+DO.
+
+IF v_cont <= quant.
+      IF chk = 'X'.
+         teste = v_cont MOD 2.
+             IF teste <> 0.
+                 PERFORM f_perform_impar.
+             ENDIF.
+         PERFORM f_perform_calculo_impar. " o código alterado está embaixo.
+      ELSE.
+          write: ' Estou usando o DO', v_cont.
+          v_cont = v_cont + 1.
+      ENDIF.
+ELSE.
+   EXIT.
+ENDIF.
+ENDDO.
+
+
+  WHEN pg2.   " fazer o WHILE RADIOBUTTON.
+
+WHILE v_cont <= quant.
+    IF chk = 'X'.
+       teste = v_cont MOD 2.
+*       teste1 = v_cont MOD 5.
+        IF teste <> 0. " and teste1 = 0.
+*           perform  f_azul.
+**           perform  f_perform_impar.
+**           *perform  f_perform_calculo_impar.
+*           v_cont = v_cont + 1.
+*         else.
+           perform  f_perform_impar.
+           perform  f_perform_calculo_impar.
+          endif.
+ ELSE.
+      write: / ' Estou usando o While ', v_cont.
+      v_cont = v_cont + 1.
+  ENDIF.
+ENDWHILE.
+ENDCASE.
+
+
+form f_perform_impar.
+ WRITE:/'O valor é impar', v_cont COLOR 6.
+
+ENDFORM.
+
+form f_perform_multiplo.
+
+WRITE:/'O valor é MuLTIPLO DE 10', v_cont COLOR 4.
+ENDFORM.
+
+
+form f_perform_calculo_impar.
+    IF chk1 = 'X'.
+         teste = v_cont MOD 2.
+          IF teste = 0.
+            perform f_perform_multiplo.
+*         WRITE:/'O valor é MuLTIPLO DE 10', v_cont COLOR 4.
+          endif.
+      ENDIF.
+             v_cont = v_cont + 1.
+
+endform.
+form f_azul.
+  write: / 'o valor é Multiplo de 5', v_cont COLOR 5.
+ENDFORM.

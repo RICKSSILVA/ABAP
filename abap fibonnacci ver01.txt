@@ -1,0 +1,51 @@
+*&---------------------------------------------------------------------*
+*& Report ZABAP_FIBONNACI_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZABAP_FIBONNACI_16.
+
+PARAMETERS: P_number(5) type I.
+DATA: v_a(10) type I.
+data: v_b(10) type I.
+data: v_c(10) type I.
+data: v_d(10) type I.
+
+v_a = 1.
+v_b = 1.
+
+START-OF-SELECTION.
+v_d = 0.
+
+ if P_number = 0.
+
+   write: /'A posição é 1 e o valor  0'.
+ endif.
+
+ if  P_number = 1.
+   write: /'A posição é 2 e o valor  1'.
+ endif.
+ if p_number = 2.
+   write:/ 'A posição é 3 e o valor  1'.
+
+
+
+else.
+   write: /'A posição é 1 e o valor  0'.
+   write:/ 'A posição é 2 e o valor  1'.
+   write:/ 'A posição é 3 e o valor  1'.
+ v_d = 4.
+
+do ( p_number - 3 ) times.
+
+v_c = v_a + v_b.
+v_b = v_a.
+v_a = v_c.
+
+
+write:/ 'A posicao é ', v_d, ' e o valo é ', v_c.
+
+v_d = v_d + 1.
+
+
+enddo.

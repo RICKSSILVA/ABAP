@@ -1,0 +1,31 @@
+data valor   type i.
+DATA ab TYPE I.
+data semana type i.
+valor = 0.
+
+DO 50 TIMES.
+valor = valor + 1.
+WRITE:/ 'o valor antes da divisão é', valor.
+
+ab =  ( valor mod 7 ).
+semana = ( valor div 7 ).
+if valor <= 7.
+    semana = 1.
+    write: 'A quantidade dia é ', valor, 'A quantidade de semnana é', semana.
+else.
+
+    case ab.
+    
+    when 0.
+     semana = semana + 0.
+     write: 'A quantidade dia é ', valor, 'A quantidade de semnana é', semana.
+    when OTHERS.
+     semana = semana + 1.
+     write: 'A quantidade dia é ', valor, 'A quantidade de semnana é', semana.
+    ENDCASE.     
+ENDIF.
+ 
+ 
+WRITE: / 'O valor do MOD É', ab .
+
+ENDDO.

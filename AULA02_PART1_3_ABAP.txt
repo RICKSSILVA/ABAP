@@ -1,0 +1,36 @@
+*&---------------------------------------------------------------------*
+*& Report Z_AULA2_3_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT Z_AULA2_3_16.
+
+PARAMETERS: p_valor type i.
+PARAMETERS: p_char .
+START-OF-SELECTION.
+
+IF p_valor GT 10. " GREAT THAN
+
+  write: ' Maior que 10'.
+
+ ENDIF
+
+IF p_valor EQ 10.
+
+  WRITE: 'IGUAL A 10'.
+ ENDIF.
+
+ IF P_DIA IS INITIAL.
+
+
+
+ ENDIF.
+ IF P_DIA EQ '00000000'.
+   WRITE:''.
+  ENDIF.
+
+  IF P_VALOR IS NOT INITIAL.
+    WRITE: 'PREENCHIDO'.
+
+
+  ENDIF.

@@ -1,0 +1,132 @@
+data semanal type i.
+data v_data type i.
+data p_fil(50) type C.
+data p_val type p decimals 2.
+data v_auxiliar type C.
+data v_calcsem type i.
+data v_cab1(60) type C.
+data v_semana type i.
+data p_cli(10) type C.
+data diaria type i.
+data v_diaria type i.
+data ambos type i.
+************************************************
+p_fil = 'tubarao'.
+p_val = 5.
+*semanal = 1.
+p_cli = 'THARAUJO'.
+v_data = 9.
+*diaria = 1. 
+ambos = 1.
+*p_cli = 'RICARDO'.
+************************************************
+IF diaria is not INITIAL.
+************************************************
+v_diaria = v_data * p_val.
+v_auxiliar = v_data.
+    CONCATENATE:  '| O FILME' p_fil 'será alugado por' v_auxiliar 'dias.'
+      INTO v_cab1
+      SEPARATED BY ' '.
+    IF p_cli = 'THARAUJO'.
+    v_diaria =  v_diaria - ( ( v_diaria * 5 ) / 100 ).
+
+    ENDIF.
+    WRITE:/ v_cab1.
+    WRITE:/'| Valor do aluguel por diária: R$ ',  v_diaria COLOR 3.
+    write 60 '|'.
+    write /.
+    write: (60) sy-uline.
+ENDIF.
+************************************************
+if semanal is not INITIAL.
+************************************************
+* CALCULAR AS SEMANAS CORRETAMENTE**************
+    v_calcsem = ( v_data mod 7 ).
+    v_semana = ( v_data div 7 ).
+    if v_data <= 7.
+    
+	    v_semana = 1.
+    else.
+	    case v_calcsem.
+    	when	0.
+	    	v_semana = v_semana + 0.
+	    when others.
+		    v_semana = v_semana + 1.
+	    endcase.
+	endif.
+  v_semana = v_semana * p_val * 5.
+  v_auxiliar = v_data.
+  CONCATENATE:  '| O FILME' p_fil 'será alugado por' v_auxiliar 'dias.'
+      INTO v_cab1
+      SEPARATED BY ' '.
+IF p_cli = 'THARAUJO'.
+  v_semana =  v_semana - ( ( v_semana * 5 ) / 100 ).
+
+ENDIF.
+
+WRITE:/ v_cab1.
+WRITE:/'| Valor do aluguel por semana: R$ ',  v_semana COLOR 3.
+write 60 '|'.
+endif.
+******************************************************************************
+******************************************************************************
+if  ambos is NOT INITIAL.
+******************************************************************************
+v_calcsem = ( v_data mod 7 ).
+v_semana = ( v_data div 7 ).
+    if v_data <= 7.
+    
+	    v_semana = 1.
+    else.
+	    case v_calcsem.
+    	    when	0.
+			    v_semana = v_semana + 0.
+		    when others.
+			    v_semana = v_semana + 1.
+	    endcase.
+    endif.
+****************************termino do calculo da semana.
+
+ v_auxiliar = v_data.
+    IF p_cli = 'THARAUJO'.
+            v_diaria = v_data * p_val.
+            v_semana = v_semana * p_val * 5.
+            v_semana =  v_semana - ( ( v_semana * 5 ) / 100 ).
+            v_diaria =  v_diaria - ( ( v_diaria * 5 ) / 100 ). 
+    else.        
+
+             v_semana = v_semana * p_val * 5.
+             v_diaria = v_data * p_val.
+
+    endif.
+
+ WRITE: '| Bom dia ', p_cli, ','.
+IF  v_diaria GT v_semana.
+   
+    
+    CONCATENATE:  'O FILME' p_fil 'será alugado por --' v_auxiliar 'dias.'
+          INTO v_cab1
+          SEPARATED BY ' '.
+    WRITE:/'|' , v_cab1.
+    WRITE 60 '|'.
+    WRITE:/'| Valor do aluguel por diária: R$ ',  v_diaria COLOR 6.
+    WRITE 60 '|'.
+    WRITE:/'| Valor do aluguel por semana: R$ ',  v_semana COLOR 3.
+    write 60 '|'.
+    write /.
+
+ELSE.
+     CONCATENATE:  'O FILME' p_fil 'será alugado por --' v_auxiliar 'dias.'
+          INTO v_cab1
+          SEPARATED BY ' '.
+    WRITE:/'|' , v_cab1.
+    WRITE 60 '|'.
+    WRITE:/'| Valor do aluguel por diária: R$ ',  v_diaria COLOR 4.
+    WRITE 60 '|'.
+    WRITE:/'| Valor do aluguel por semana: R$ ',  v_semana COLOR 6.
+    write 60 '|'.
+    write 60 '|'.
+    write: (60) sy-uline.
+
+ENDIF.
+ENDIF.

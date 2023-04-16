@@ -1,0 +1,34 @@
+*&---------------------------------------------------------------------*
+*& Report ZAULA02_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZAULA02_16.
+WRITE 'programa 02'.
+***Aula 01 - primeiro programa
+* WRITE 'HELLO WORLD'
+"Comentário do código anterior para referência-----------------"
+*********a
+*p_ referncia ao parametro
+DATA v_frase(90) type C.
+
+
+PARAMETERS: p_text1(30) type C,
+            p_text2(30) type C,
+            p_text3(30) type C,
+            p_inter   type I,
+            p_numC(5)     TYPE N.
+
+*WRITE:      p_text1,
+*            p_text2,
+*            p_text3.
+
+CONCATENATE p_text1  p_text2 p_text3
+        INTO v_frase
+         SEPARATED BY ' - '.
+*        RESPECTING BLANKS.
+
+
+WRITE: v_frase,
+       / p_inter,
+       / p_numC.

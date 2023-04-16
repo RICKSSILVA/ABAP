@@ -1,0 +1,44 @@
+*&---------------------------------------------------------------------*
+*& Report ZEXERCICIO04_02_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZEXERCICIO04_02_16.
+
+"1. DECLARAR A TABELA QUE VOU BUSCAR OS DADOS.
+TABLES:ZFILME16.
+
+TYPES: BEGIN OF ty_filme,
+       COD_FILME TYPE ZFILME16-COD_FILME,
+       NOME      TYPE ZFILME16-NOME,
+      END OF ty_filme.
+
+
+
+DATA:t_tabela2_interna TYPE TABLE OF ty_filme.
+DATA: w_work_area TYPE ty_filme.
+
+
+SELECT-OPTIONS: S_CODFIL FOR ZFILME16-COD_FILME.
+SELECT-OPTIONS: S_NOME   FOR ZFILME16-NOME.
+
+
+SELECT COD_FILME NOME
+
+FROM ZFILME16
+
+INTO TABLE t_tabela2_interna
+
+WHERE COD_FILME IN S_CODFIL
+
+AND   NOME      IN S_NOME.
+
+
+LOOP AT  t_tabela2_interna into  w_work_area.
+  write: / w_work_area-COD_FILME.
+
+
+ENDLOOP.
+
+if t_tabela2_interna IS NOT INITIAL.
+  ENDIF.

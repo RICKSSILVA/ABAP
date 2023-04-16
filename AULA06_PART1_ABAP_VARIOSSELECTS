@@ -1,0 +1,257 @@
+EPORT zselect18.
+
+TABLES: mara.
+
+CONSTANTS: c_verdadeiro(1) TYPE c VALUE 'X'.
+
+PARAMETERS: p_materi   TYPE mara-matnr.
+SELECT-OPTIONS: s_tipo FOR mara-mtart.
+
+PARAMETERS: r_s1    RADIOBUTTON GROUP g1. "Single 1 campo
+PARAMETERS: r_s3    RADIOBUTTON GROUP g1. "Single vários campos
+PARAMETERS: r_upto  RADIOBUTTON GROUP g1. "UP to 1 ROWS
+PARAMETERS: r_tab   RADIOBUTTON GROUP g1. "Into Table
+PARAMETERS: r_FAe   RADIOBUTTON GROUP g1. "FOR ALL ENTRIES
+PARAMETERS: r_inner RADIOBUTTON GROUP g1. "Inner Join
+
+START-OF-SELECTION.
+
+  CASE c_verdadeiro.
+    WHEN r_s1.    "Single 1 campo
+      PERFORM f_select_single_1_campo.
+
+    WHEN r_s3.    "Single vários campos
+      PERFORM f_select_single_varios_campo.
+
+    WHEN r_tab.   "Into Table
+      PERFORM f_select_varias_linhas.
+
+    WHEN r_FAe.   "FOR ALL ENTRIES
+      PERFORM f_for_all_entries.
+
+    WHEN r_inner. "Inner Join
+
+  ENDCASE.
+*&---------------------------------------------------------------------*
+*& Form f_select_single_1_campo
+*&---------------------------------------------------------------------*
+*& Seleção de apenas 1 linha trazendo apenas 1 campo
+*&---------------------------------------------------------------------*
+FORM f_select_single_1_campo .
+
+  DATA: vl_ernam TYPE mara-ernam.
+  DATA: vl_BISMT TYPE mara-bismt.
+
+  "Usuário criador
+  SELECT SINGLE ernam
+    FROM mara
+    INTO vl_ernam
+    WHERE matnr = p_materi.
+
+  IF sy-subrc IS NOT INITIAL.
+    MESSAGE e002(00). "Entrar um valor válido
+  ENDIF.
+
+  " Número de material antigo
+  SELECT SINGLE bismt
+    FROM mara
+    INTO vl_BISMT
+    WHERE matnr = p_materi.
+
+  IF sy-subrc IS NOT INITIAL.
+    "Sem validação
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_select_single_varios_campo
+*&---------------------------------------------------------------------*
+*& Seleção de apenas 1 linha puxando várias colunas
+*&---------------------------------------------------------------------*
+FORM f_select_single_varios_campo .
+
+  DATA: vl_ernam TYPE mara-ernam.
+  DATA: vl_ersda TYPE mara-ersda.
+  DATA: vl_mtart TYPE mara-mtart.
+
+  SELECT SINGLE ernam ersda mtart
+    FROM mara
+    INTO ( vl_ernam, vl_ersda, vl_mtart )
+    WHERE matnr = p_materi.
+
+  IF sy-subrc IS NOT INITIAL.
+
+  ENDIF.
+
+  TYPES: BEGIN OF ty_material,
+           ernam TYPE mara-ernam,
+           ersda TYPE mara-ersda,
+           mtart TYPE mara-mtart,
+         END OF ty_material.
+
+  DATA: w_material TYPE ty_material.
+
+  SELECT SINGLE ernam ersda mtart
+    FROM mara
+    INTO w_material
+    WHERE matnr = p_materi.
+
+  IF sy-subrc IS NOT INITIAL.
+
+  ENDIF.
+
+  DATA: w_todos TYPE mara.
+
+  SELECT SINGLE *
+    FROM mara
+    INTO w_todos
+    WHERE matnr = p_materi.
+
+  IF sy-subrc IS NOT INITIAL.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_select_varias_linhas
+*&---------------------------------------------------------------------*
+*& Seleção de várias linhas
+*&---------------------------------------------------------------------*
+FORM f_select_varias_linhas .
+
+  TYPES: BEGIN OF ty_material,
+           ernam TYPE mara-ernam,
+           ersda TYPE mara-ersda,
+           mtart TYPE mara-mtart,
+         END OF ty_material.
+
+  DATA: t_material TYPE TABLE OF ty_material.
+
+  SELECT ernam ersda mtart
+    FROM mara
+    INTO TABLE t_material
+    WHERE matnr = p_materi
+      AND mtart IN s_tipo.
+
+  IF sy-subrc IS NOT INITIAL.
+
+  ENDIF.
+
+  DATA: t_todos TYPE TABLE OF mara.
+
+  SELECT *
+    FROM mara
+    INTO TABLE t_todos
+    WHERE mtart IN s_tipo.
+
+  IF sy-subrc IS NOT INITIAL.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_for_all_entries
+*&---------------------------------------------------------------------*
+*& Seleção com FOR ALL ENTRIES
+*&---------------------------------------------------------------------*
+FORM f_for_all_entries .
+
+  "Material|Descrição|Data de Criação
+
+  TYPES: BEGIN OF ty_material,
+           matnr TYPE mara-matnr,
+           ersda TYPE mara-ersda,
+         END OF ty_material.
+
+  DATA: t_material TYPE TABLE OF ty_material.
+  DATA: w_material TYPE ty_material.
+
+  SELECT matnr ersda
+    FROM mara
+    INTO TABLE t_material
+    WHERE mtart IN s_tipo.  " PRIMEIRA SELECAO DO CAMPO PARA FAZER A PESQUISA NO SEGUNDO CAMPO
+
+  IF sy-subrc IS INITIAL.
+
+    sort t_material by matnr.
+
+    TYPES: BEGIN OF ty_descricao,
+             matnr TYPE makt-matnr,
+             maktx TYPE makt-maktx,
+           END OF ty_descricao.
+
+    DATA: t_descricao TYPE TABLE OF ty_descricao.
+    DATA: w_descricao TYPE ty_descricao.
+
+    SELECT matnr maktx
+      FROM makt
+      INTO TABLE t_descricao
+      FOR ALL ENTRIES IN t_material
+      WHERE matnr = t_material-matnr.
+
+    IF sy-subrc IS INITIAL.
+
+      sort t_descricao by matnr.
+
+      LOOP AT t_material INTO w_material.
+
+        WRITE: / w_material-matnr. "Material.
+
+        READ TABLE t_descricao INTO w_descricao
+        WITH KEY matnr = w_material-matnr
+                 BINARY SEARCH.
+
+        IF sy-subrc IS INITIAL. "Achou a linha na tabela T_DESCRICAO
+          WRITE: w_descricao-maktx.
+        ENDIF.
+
+        WRITE:   w_material-ersda. "Data
+
+      ENDLOOP.
+
+    ENDIF.
+
+  ENDIF.
+
+
+*&---------------------------------------------------------------------*
+*& Form f_inner_join
+*&---------------------------------------------------------------------*
+*& Seleção unindo duas tabelas ou mais
+*&---------------------------------------------------------------------*
+FORM f_inner_join .
+
+  TYPES: BEGIN OF ty_material,
+           matnr TYPE mara-matnr,
+           maktx TYPE makt-maktx,
+           ersda TYPE mara-ersda,
+         END OF ty_material.
+
+  DATA: t_join TYPE TABLE OF ty_material.
+  DATA: w_join TYPE ty_material.
+
+  "Material|Descrição|Data de Criação
+  SELECT MARA~matnr  "Número de material
+         MAKT~maktx  "Descrição
+         MARA~ersda  "Data de criação
+    FROM MARA
+    INNER JOIN MAKT ON MAKT~MATNR = MARA~MATNR
+    into TABLE t_join
+    where MARA~MTART in S_TIPO.
+
+    if sy-subrc is INITIAL.
+
+      loop at t_join into w_join.
+        write: / w_join.
+      endloop.
+
+    endif.
+
+ENDFORM.
+
+
+
+
+
+
+ENDFORM.

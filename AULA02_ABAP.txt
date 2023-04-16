@@ -1,0 +1,64 @@
+/OSU53
+
+/ONVA1 - UTILIZAR OUTRA TELA SEM PERDE A OUTRA TELA
+
+Z OU Y
+
+Z E Y - OBJETOS DO CLIENTE
+
+
+ABAPEDITOR.COM
+
+Z* - 
+
+01 - criaçao
+02 - editar
+03 - exibe
+
+/omm03
+
+gerar relatorio SE38
+
+SE80 - WORKBENCH
+/OSE93 - TRANSAÇÃO
+/0SE38 - REPORT
+
+CRTL F3 - ATIVAR
+F8 - EXECUTAR
+F3 - VOLTAR
+
+*&---------------------------------------------------------------------*
+*& Report ZAULA02_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZAULA02_16.
+WRITE 'programa 02'.
+***Aula 01 - primeiro programa
+* WRITE 'HELLO WORLD'
+"Comentário do código anterior para referência-----------------"
+*********a
+*p_ referncia ao parametro
+DATA v_frase(90) type C.
+
+
+PARAMETERS: p_text1(30) type C OBLIGATORY	,
+            p_text2(30) type C,
+            p_text3(30) type C.
+
+*WRITE:      p_text1,
+*            p_text2,
+*            p_text3.
+
+CONCATENATE p_text1  p_text2 p_text3
+        INTO v_frase
+* SEPARATED BY ' - '.
+        RESPECTING BLANKS.
+
+
+
+***** PARA O NOME DAS VARIAVEIS PARA FICAR MAIS AMIGÁVEL ENTRAR EM TEXT ELEMENT
+
+WRITE: v_frase .
+
+*************************************************************************
