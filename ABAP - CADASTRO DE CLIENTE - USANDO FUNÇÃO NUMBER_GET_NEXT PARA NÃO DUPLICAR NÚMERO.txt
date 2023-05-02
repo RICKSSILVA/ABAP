@@ -1,0 +1,140 @@
+*&---------------------------------------------------------------------*
+*& Report ZEXE_ATUALIZABD16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZEXE_ATUALIZABD16.
+
+SELECTION-SCREEN: BEGIN OF BLOCK B1 WITH FRAME TITLE TEXT-001.
+
+PARAMETERS: COD_CLI TYPE ZCLIENTE16-COD_CLIENTE16,
+            NOME    TYPE ZCLIENTE16-NOME.
+SELECTION-SCREEN: END OF BLOCK B1.
+
+SELECTION-SCREEN: BEGIN OF BLOCK B2 WITH FRAME TITLE TEXT-002.
+PARAMETERS: p_vip AS CHECKBOX.
+SELECTION-SCREEN: END OF BLOCK B2.
+
+SELECTION-SCREEN:BEGIN OF BLOCK B3 WITH FRAME TITLE TEXT-003.
+PARAMETERS: p_ins RADIOBUTTON GROUP g1,
+            p_atua RADIOBUTTON GROUP g1,
+            p_delr RADIOBUTTON GROUP G1.
+SELECTION-SCREEN: END OF BLOCK B3.
+
+START-OF-SELECTION.
+
+CASE ABAP_TRUE.
+  WHEN  p_ins.
+    PERFORM f_inserir.
+  WHEN p_atua.
+    PERFORM f_atualizar.
+  WHEN p_delr.
+    PERFORM f_deletar.
+ENDCASE.
+
+DATA: w_cliente16 TYPE ZCLIENTE16.
+
+FORM f_inserir.
+
+DATA: w_cliente16 TYPE ZCLIENTE16.
+
+pERFORM f_chamada.
+
+w_cliente16-COD_CLIENTE16 = COD_CLI.
+w_cliente16-NOME          = NOME.
+w_cliente16-VIP           = p_vip.
+
+IF w_cliente16 is not initial.
+  insert ZCLIENTE16 FROM w_cliente16.
+
+  IF SY-SUBRC IS INITIAL.
+    COMMIT WORK AND WAIT.
+  ELSE.
+    ROLLBACK WORK.
+  ENDIF.
+ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_atualizar
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_atualizar .
+DATA: w_cliente16 TYPE ZCLIENTE16.
+
+w_cliente16-COD_CLIENTE16 = COD_CLI.
+w_cliente16-NOME          = NOME.
+w_cliente16-VIP           = p_vip.
+
+MODIFY zcliente16 from w_cliente16.
+
+
+if SY-SUBRC IS INITIAL.
+  COMMIT WORK AND WAIT.
+ELSE.
+  ROLLBACK WORK.
+ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_deletar
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_deletar .
+DATA: w_cliente16 TYPE ZCLIENTE16.
+
+
+w_cliente16-COD_CLIENTE16 = COD_CLI.
+
+IF w_cliente16 is not initial.
+   delete zcliente16 FROM w_cliente16.
+  if SY-SUBRC IS INITIAL.
+    COMMIT WORK AND WAIT.
+  ELSE.
+    ROLLBACK WORK.
+
+  ENDIF.
+ENDIF.
+
+
+
+ENDFORM.
+
+
+FORM f_chamada.
+
+    CALL FUNCTION 'NUMBER_GET_NEXT'
+      EXPORTING
+        nr_range_nr                   = '01'
+        object                        = 'ZSEQ'
+*       QUANTITY                      = '1'
+*       SUBOBJECT                     = ' '
+*       TOYEAR                        = '0000'
+*       IGNORE_BUFFER                 = ' '
+    IMPORTING
+    NUMBER                        = COD_CLI
+
+     EXCEPTIONS
+       INTERVAL_NOT_FOUND            = 1
+       NUMBER_RANGE_NOT_INTERN       = 2
+       OBJECT_NOT_FOUND              = 3
+       QUANTITY_IS_0                 = 4
+       QUANTITY_IS_NOT_1             = 5
+       INTERVAL_OVERFLOW             = 6
+       BUFFER_OVERFLOW               = 7
+       OTHERS                        = 8.
+
+    IF sy-subrc <> 0.
+*     Implement suitable error handling here
+    ENDIF.
+
+    endform.
+    endform.

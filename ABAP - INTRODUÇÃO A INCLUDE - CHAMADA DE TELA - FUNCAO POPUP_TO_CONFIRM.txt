@@ -1,0 +1,231 @@
+*&---------------------------------------------------------------------*
+*& Report ZABAP_EXEM10_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZABAP_EXEM10_16.
+
+INCLUDE ZABAP_EXEM10_16_TOP. "DECLARAÇÕES GLOBAIS.
+INCLUDE ZABAP_EXEM10_16_POB. " BEFORE OUTPUT
+INCLUDE ZABAP_EXEM10_16_PAI. "AFTER OUTPUT
+INCLUDE ZABAP_EXEM10_16_F01. "PERFORMS.
+START-OF-SELECTION.
+
+CALL SCREEN 9000. " CHAMA A TELA
+________________________________
+
+*&---------------------------------------------------------------------*
+*& Include          ZABAP_EXEM10_16_TOP
+*&---------------------------------------------------------------------*
+
+
+DATA: V_CAMPO(15) TYPE C.
+
+DATA: V_CHECKBOX TYPE FLAG.
+
+________________________________
+*&---------------------------------------------------------------------*
+*& Include          ZABAP_EXEM10_16_POB
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module PREECHE_TELA OUTPUT - PROGRAMA OK. REVISADO
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE preeche_tela OUTPUT.
+* SET PF-STATUS 'xxxxxxxx'.
+* SET TITLEBAR 'xxx'.
+PERFORM PREENCHE_TELA.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_9000 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE status_9000 OUTPUT.
+ SET PF-STATUS 'STATUS'.
+* SET TITLEBAR 'xxx'.
+ENDMODULE.
+
+________________________________
+*&---------------------------------------------------------------------*
+*& Include          ZABAP_EXEM10_16_PAI
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_9000  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_9000 INPUT.
+
+CASE sy-ucomm.
+  WHEN 'BOTAO'.
+    PERFORM f_botao_botao.
+   WHEN 'PROXIMO'.
+    CALL SCREEN 9100.
+   WHEN 'SALVAR'.
+     PERFORM F_SALVAR.
+   WHEN 'VOLTAR' OR 'ABORAT' OR 'CANCELAR'.
+    SET SCREEN 0.
+    LEAVE SCREEN.
+   WHEN 'BTN1'.
+      MESSAGE 'BOTAO PRECIONADO' TYPE 'S'.
+
+   WHEN OTHERS.
+
+
+ENDCASE.
+
+ENDMODULE.
+MODULE user_command_9100 INPUT.
+
+  CASE sy-ucomm.
+    WHEN 'ANTERIOR'.
+     "CALL SCREEN 9000.
+      SET SCREEN 0.
+      LEAVE SCREEN.
+
+    WHEN 'SALVAR'.
+         PERFORM f_salvar.
+
+    WHEN 'VOLTAR' OR 'ABORAT' OR 'CANCELAR'.
+    SET SCREEN 0.
+    LEAVE SCREEN.
+
+    WHEN 'BTN1'.
+      MESSAGE 'BOTAO PRECIONADO' TYPE 'S'.
+
+    WHEN OTHERS.
+
+  ENDCASE.
+
+ENDMODULE.
+
+________________________________
+*&---------------------------------------------------------------------*
+*& Include          ZABAP_EXEM10_16_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form f_botao_botao
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_botao_botao .
+"BOTAÃO DE AÇÃO FOI  CLICADO
+"pEGAR O VALOR INFORMADO NA CAIXA DE TEXTO  V_CAMPO E APARECER UMA MSG COM ELE.
+
+"ENTRADA & & & EXISTENTE (ENTRADA CORRETA
+MESSAGE S057(00) WITH V_CAMPO.
+
+
+ENDFORM.
+
+FORM PREENCHE_TELA.
+IF V_CHECKBOX IS NOT INITIAL.
+
+  LOOP AT SCREEN.
+
+    IF SCREEN-NAME = 'V_RADIO'
+      OR SCREEN-NAME = 'V_RADIO2'
+      OR SCREEN-NAME ='V_RADIO3'.
+      SCREEN-INVISIBLE = 0. "VISIVEL
+    ENDIF.
+    MODIFY SCREEN.
+    ENDLOOP.
+ ELSE.
+   LOOP AT SCREEN.
+   IF SCREEN-NAME = 'V_RADIO'
+      OR SCREEN-NAME = 'V_RADIO2'
+      OR SCREEN-NAME ='V_RADIO3'.
+      SCREEN-INVISIBLE = 1. "INVISIVEL
+
+  ENDIF.
+  MODIFY SCREEN.
+  endloop.
+
+  ENDIF.
+  ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_SALVAR
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_salvar .
+
+DATA: V_RESPOSTA(1) TYPE C.
+
+CALL FUNCTION 'POPUP_TO_CONFIRM'
+  EXPORTING
+   text_question               = 'DESEJA REALMENTE SALVAR.'
+   TEXT_BUTTON_1               = 'SIM'
+   ICON_BUTTON_1               = 'ICON_CHECKED'
+   TEXT_BUTTON_2               = 'NÃO'
+   ICON_BUTTON_2               = 'ICON_INCOMPLETE'
+   DEFAULT_BUTTON              = '2'
+
+ IMPORTING
+   ANSWER                      = V_RESPOSTA
+* TABLES
+*   PARAMETER                   =
+ EXCEPTIONS
+   TEXT_NOT_FOUND              = 1
+   OTHERS                      = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+IF  V_RESPOSTA = '1'.
+MESSAGE 'DADOS SALVOS COM SUCESSO' TYPE 'S'.
+ELSE.
+MESSAGE 'AÇÃO CANCELADA' TYPE 'S'
+DISPLAY LIKE 'E'.
+
+ENDIF.
+ENDFORM.
+________________________________
+
+*****************CALL SCREEN 9000.************************************
+PROCESS BEFORE OUTPUT.
+MODULE STATUS_9000.
+
+MODULE preeche_tela.
+*
+PROCESS AFTER INPUT.
+"MODULE USER_COMMAND_9000.
+
+MODULE user_command_9000.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

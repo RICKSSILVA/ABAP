@@ -1,0 +1,228 @@
+*&---------------------------------------------------------------------*
+*& Report ZRJN16_CASE_CUSTOS
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZRJN16_CASE_CUSTOS.
+
+INCLUDE ZRJN16I_CASE_CUSTOS_TOP.
+INCLUDE ZRJN16I_CASE_CUSTOS_PBO.
+"INCLUDE ZRJN16I_CASE_CUSTOS_PAI.
+INCLUDE ZRJN16I_CASE_CUSTOS_F01.
+
+START-OF-SELECTION.
+
+PERFORM F_SELECT_DADOS.
+PERFORM F_CHAMA_ALV.
+______________________
+*&---------------------------------------------------------------------*
+*& Include          ZRJN16I_CASE_CUSTOS_TOP
+*&---------------------------------------------------------------------*
+
+TABLES: VBAK,
+        TCURC,
+        ZTJN16_DOCUMENTO.
+
+DATA: LT_REPORT TYPE TABLE OF ZESTRUTURA16_REPORT.
+DATA: WLT_REPORT TYPE ZESTRUTURA16_REPORT.
+DATA: LW_LAYOUT TYPE SLIS_LAYOUT_ALV.
+
+SELECTION-SCREEN: BEGIN OF BLOCK B1 WITH FRAME TITLE TEXT-003.
+SELECT-OPTIONS  s_data FOR  ZTJN16_DOCUMENTO-DATA_CRIACAO  DEFAULT sy-datum.
+SELECT-OPTIONS: s_ord FOR VBAK-VBELN.
+SELECTION-SCREEN:END OF BLOCK B1.
+
+SELECTION-SCREEN: BEGIN OF BLOCK B2 WITH FRAME TITLE TEXT-005.
+  PARAMETERS: p_moeda type STRING DEFAULT 'BRL'.
+SELECTION-SCREEN: END OF BLOCK B2.
+______________________
+
+*&---------------------------------------------------------------------*
+*& Include          ZRJN16I_CASE_CUSTOS_PBO
+*&---------------------------------------------------------------------*
+
+______________________
+
+*&---------------------------------------------------------------------*
+*& Include          ZRJN16I_CASE_CUSTOS_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+
+
+FORM f_select_dados .
+
+DATA: LWW_OUTPUT TYPE ZESTRUTURA16_REPORT.
+SELECT  ZTJN16_DOCUMENTO~MATNR,
+       ZTJN16_DOCUMENTO~VBELN,
+       ZTJN16_DOCUMENTO~QTD_EMBALAGENS,
+       ZTJN16_DOCUMENTO~UNID_EMBALAGEM,
+       ZTJN16_DOCUMENTO~PESO_REAL,
+       ZTJN16_DOCUMENTO~UNIDADE_DE_PESO,
+       ZTJN16_DOCUMENTO~DATA_CRIACAO
+FROM ZTJN16_DOCUMENTO
+INTO TABLE @DATA(L_REPORT)
+WHERE VBELN IN @S_ORD AND ZTJN16_DOCUMENTO~DATA_CRIACAO IN @s_data.
+
+IF  SY-SUBRC IS INITIAL.
+LOOP AT L_REPORT INTO DATA(LW_REPORT) .
+
+MOVE-CORRESPONDING LW_REPORT TO LWW_OUTPUT.
+
+APPEND LWW_OUTPUT TO LT_REPORT.
+
+ENDLOOP.
+ELSE.
+ENDIF.
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form F_CHAMA_ALV
+*&---------------------------------------------------------------------*
+*& text
+FORM f_chama_alv .
+DATA: LT_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV.
+
+lW_LAYOUT-ZEBRA = 'X'.
+CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+ EXPORTING
+   I_STRUCTURE_NAME             = 'ZESTRUTURA16_REPORT'
+  CHANGING
+    ct_fieldcat                  = LT_FIELDCAT
+ EXCEPTIONS
+   INCONSISTENT_INTERFACE       = 1
+   PROGRAM_ERROR                = 2
+   OTHERS                       = 3
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+EXPORTING
+   IS_LAYOUT                         = LW_LAYOUT
+   IT_FIELDCAT                       = LT_FIELDCAT
+  TABLES
+    t_outtab                          = LT_REPORT
+ EXCEPTIONS
+   PROGRAM_ERROR                     = 1
+   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+ENDFORM.
+
+______________________
+
+*& Include          ZRJN16I_CASE_CUSTOS_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+
+
+FORM f_select_dados .
+
+DATA: LWW_OUTPUT TYPE ZESTRUTURA16_REPORT.
+SELECT  ZTJN16_DOCUMENTO~MATNR,
+       ZTJN16_DOCUMENTO~VBELN,
+       ZTJN16_DOCUMENTO~QTD_EMBALAGENS,
+       ZTJN16_DOCUMENTO~UNID_EMBALAGEM,
+       ZTJN16_DOCUMENTO~PESO_REAL,
+       ZTJN16_DOCUMENTO~UNIDADE_DE_PESO,
+       ZTJN16_DOCUMENTO~DATA_CRIACAO
+FROM ZTJN16_DOCUMENTO
+INTO TABLE @DATA(L_REPORT)
+WHERE VBELN IN @S_ORD AND ZTJN16_DOCUMENTO~DATA_CRIACAO IN @s_data.
+
+IF  SY-SUBRC IS INITIAL.
+LOOP AT L_REPORT INTO DATA(LW_REPORT) .
+
+MOVE-CORRESPONDING LW_REPORT TO LWW_OUTPUT.
+
+APPEND LWW_OUTPUT TO LT_REPORT.
+
+ENDLOOP.
+ELSE.
+ENDIF.
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form F_CHAMA_ALV
+*&---------------------------------------------------------------------*
+*& text
+FORM f_chama_alv .
+DATA: LT_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV.
+
+lW_LAYOUT-ZEBRA = 'X'.
+CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+ EXPORTING
+   I_STRUCTURE_NAME             = 'ZESTRUTURA16_REPORT'
+  CHANGING
+    ct_fieldcat                  = LT_FIELDCAT
+ EXCEPTIONS
+   INCONSISTENT_INTERFACE       = 1
+   PROGRAM_ERROR                = 2
+   OTHERS                       = 3
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+EXPORTING
+   IS_LAYOUT                         = LW_LAYOUT
+   IT_FIELDCAT                       = LT_FIELDCAT
+  TABLES
+    t_outtab                          = LT_REPORT
+ EXCEPTIONS
+   PROGRAM_ERROR                     = 1
+   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+ENDFORM.
+
+______________________
+
+*&---------------------------------------------------------------------*
+*& Form F_CHAMA_ALV
+*&---------------------------------------------------------------------*
+*& text
+FORM f_chama_alv .
+DATA: LT_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV.
+
+lW_LAYOUT-ZEBRA = 'X'.
+CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+ EXPORTING
+   I_STRUCTURE_NAME             = 'ZESTRUTURA16_REPORT'
+  CHANGING
+    ct_fieldcat                  = LT_FIELDCAT
+ EXCEPTIONS
+   INCONSISTENT_INTERFACE       = 1
+   PROGRAM_ERROR                = 2
+   OTHERS                       = 3
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+EXPORTING
+   IS_LAYOUT                         = LW_LAYOUT
+   IT_FIELDCAT                       = LT_FIELDCAT
+  TABLES
+    t_outtab                          = LT_REPORT
+ EXCEPTIONS
+   PROGRAM_ERROR                     = 1
+   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+ENDFORM.
+______________________
+
+

@@ -1,0 +1,67 @@
+*&---------------------------------------------------------------------*
+*& Report ZEXERCICIO04_02_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZEXERCICIO04_02_16.
+
+TABLES: MARA. "SELECIONEI A TABELA.
+TYPES: BEGIN  OF ty_mara,  TIPO_MATERIAL   TYPE MARA-MTART,
+                           DATA_CRIACAO    TYPE MARA-ERSDA,
+                           USUARIO_CRIADOR TYPE MARA-ERNAM,
+                           FILE4            TYPE MARA-MATNR,
+                           FILE5           TYPE MARA-CREATED_AT_TIME,
+      END of ty_mara.
+DATA: t_type_tabela TYPE TABLE OF ty_mara.
+DATA: v_conc(80) type C.
+DATA: workarea TYPE  ty_mara.
+
+SELECTION-SCREEN: BEGIN OF BLOCK B1 WITH FRAME TITLE text-001.
+SELECT-OPTIONS: T_MATER FOR MARA-MTART .
+SELECT-OPTIONS: D_CRIAC FOR MARA-ERSDA .
+SELECT-OPTIONS: USUARIO FOR MARA-ERNAM.
+SELECTION-SCREEN: END OF BLOCK B1.
+
+SELECT MTART
+       ERSDA
+       ERNAM
+       MATNR
+       CREATED_AT_TIME
+
+FROM MARA
+
+INTO TABLE t_type_tabela
+
+WHERE MTART IN T_MATER AND
+      ERSDA IN D_CRIAC  AND
+      ERNAM IN USUARIO.
+
+START-OF-SELECTION.
+
+ SKIP.
+    WRITE: / '--------------------------------------------------',
+           / '| MATERIAL           |DATA       |HORA    | TIPO |',
+           / '--------------------------------------------------'.
+
+
+LOOP AT t_type_tabela into workarea.
+*CONCATENATE:'|'  workarea-file4    '|'  workarea-DATA_CRIACAO(08) '|' workarea-FILE5(06) '|' workarea-TIPO_MATERIAL(04)'|' INTO v_conc SEPARATED BY ' '.
+*WRITE: / v_conc.
+"#workarea-FILE4 = CONDENSE workarea-FILE4 NO GAPS RIGHT-JUSTIFIED.
+*WRITE: '    MATERIAL      DATA          HORA        TIPO '.
+
+  CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+  EXPORTING
+    input         = workarea-FILE4
+ IMPORTING
+   OUTPUT        = workarea-FILE4
+          .
+
+
+
+IF t_type_tabela is not initial.
+ endif.
+ WRITE:/ '|',  5 workarea-FILE4 RIGHT-JUSTIFIED,  22 '|',  workarea-DATA_CRIACAO ,   34'|'  ,  workarea-FILE5, 43 '|', workarea-TIPO_MATERIAL, 50'|' NO-GAP.
+
+
+ENDLOOP.

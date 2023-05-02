@@ -1,0 +1,923 @@
+REPORT SAPMZMJN16_CASE.
+
+INCLUDE SAPMZMJNI16_CASE_TOP.
+INCLUDE SAPMZMJNI16_CASE_PBO.
+INCLUDE SAPMZMJNI16_CASE_PAI.
+INCLUDE SAPMZMJNI16_CASE_F01.
+
+
+
+START-OF-SELECTION.
+
+CALL SCREEN 9000.
+
+*&SPWizard: Data incl. inserted by SP Wizard. DO NOT CHANGE THIS LINE!
+INCLUDE MZMJN16_CASETOP_TO .
+*&SPWizard: Include inserted by SP Wizard. DO NOT CHANGE THIS LINE!
+INCLUDE MZMJN16_CASEO01_PBO .
+INCLUDE MZMJN16_CASEI01_PAI .
+INCLUDE MZMJN16_CASEF01_F01 .
+
+____________________________________________
+*&---------------------------------------------------------------------*
+*& Include          SAPMZMJNI16_CASE_TOP
+*&---------------------------------------------------------------------*
+TABLES: VBAK,
+        VBAP,
+        MARA,
+        MAKT,
+        ZTJN16_ESTRUTURA,
+        ZTJN16_EMBALAGEM        .
+
+"CRIAR UMA WORKAREA
+
+DATA: LW_TABELA_INTERNA TYPE TABLE OF ZTJN16_ESTRUTURA.
+DATA: WW_TABELA TYPE ZTJN16_ESTRUTURA.
+
+DATA: LT_DOCUMENTO TYPE TABLE OF ZTJN16_DOCUMENTO.
+DATA: WT_DOCUMENTO TYPE ZTJN16_DOCUMENTO.
+
+
+*DATA: LT_INFO TYPE   TABLE OF MARA.
+*DATA:      LW_INFO TYPE MARA.
+**LW_INFO-MEINS = MARA-MEINS.
+*LW_INFO-BRGEW = MARA-BRGEW.
+*LW_INFO-GEWEI = MARA-GEWEI.
+*LW_INFO-MTART = MARA-MTART.
+TYPES: BEGIN OF TY_INFO,
+   MAKT  TYPE MAKT-MAKTX,
+  MEINS TYPE MARA-MEINS,
+  BRGEW TYPE MARA-BRGEW,
+  GEWEI TYPE MARA-GEWEI,
+  MTART TYPE MARA-MTART,
+END OF TY_INFO.
+
+DATA: LWT_INFO TYPE TABLE OF TY_INFO.
+DATA: WWT_INFO TYPE TY_INFO.
+
+TYPES: BEGIN OF TY_EMBALAGEM,
+       MTART          TYPE ZTJN16_EMBALAGEM-MTART,
+       MATNR          TYPE ZTJN16_EMBALAGEM-MATNR,
+       PESO_MAXIMO    TYPE ZTJN16_EMBALAGEM-PESO_MAXIMO,
+       UNID_DE_PESO   TYPE ZTJN16_EMBALAGEM-UNID_DE_PESO,
+       CUSTO_UNITARIO TYPE ZTJN16_EMBALAGEM-CUSTO_UNITARIO,
+       MOEDA          TYPE ZTJN16_EMBALAGEM-MOEDA,
+       DATA_CRIACAO   TYPE ZTJN16_EMBALAGEM-DATA_CRIACAO,
+  END OF TY_EMBALAGEM.
+
+  DATA: LTY_EMBALAGEM TYPE TABLE OF TY_EMBALAGEM.
+  DATA: WTY_EMBALAGEM TYPE TY_EMBALAGEM.
+
+
+
+
+
+*LW_INFO-MTART = MARA-MTART.
+
+____________________________________________
+
+*&---------------------------------------------------------------------*
+*& Include          SAPMZMJNI16_CASE_PBO
+*&---------------------------------------------------------------------*
+
+
+
+
+____________________________________________
+
+
+*&---------------------------------------------------------------------*
+*& Include          SAPMZMJNI16_CASE_PAI
+*&---------------------------------------------------------------------*
+
+____________________________________________
+
+MODULE user_command_9100 INPUT.
+  CASE SY-UCOMM.
+    WHEN 'SAVE'.
+      PERFORM  F_CALCULA_PESO.
+      "PERFORM  F_BATCH_INPUT.
+    WHEN ''.
+      PERFORM F_SELECT_TABLE_INSERCAO.
+    WHEN 'BACK'.
+      SET SCREEN 0.
+      LEAVE SCREEN.
+    WHEN 'LIMPAR'.
+      PERFORM F_LIMPAR.
+    WHEN OTHERS.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_9000  INPUT
+*&---------------------------------------------------------------------*
+MODULE status_9000 OUTPUT.
+SET PF-STATUS 'STATUS_GUI_9000'.
+* SET TITLEBAR 'xxx'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_9100 OUTPUT
+MODULE status_9100 OUTPUT.
+ SET PF-STATUS 'STATUS_GUI_9100'.
+* SET TITLEBAR 'xxx'.
+ENDMODULE.
+
+MODULE user_command_9000 INPUT.
+
+CASE SY-UCOMM.
+   WHEN 'AVANCAR'.
+     CALL SCREEN  9100.
+    WHEN 'SAVE'.
+    WHEN 'BACK'.
+    SET  SCREEN 0.
+    LEAVE SCREEN.
+   WHEN OTHERS.
+   ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Form F_CALCULA_PESO
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_calcula_peso .
+LOOP AT LW_TABELA_INTERNA into WW_TABELA.
+"data: lt_peso type string.
+  IF WW_TABELA-GEWEI  <> 'KG'.
+CALL FUNCTION 'Z_LIB_CONV_PESO'
+  EXPORTING
+    i_material              = WW_TABELA-MATNR
+    i_peso                  = WW_TABELA-BRGEW
+    i_medida                = WW_TABELA-MEINS
+ IMPORTING
+   O_PESO_EM_KG            = WW_TABELA-BRGEW
+ EXCEPTIONS
+   ERRO_AO_CONVERTER       = 1
+   OTHERS                  = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+modify LW_TABELA_INTERNA from WW_TABELA.
+"  message  WW_TABELA-BRGEW type 'I'.
+
+ENDIF.
+PERFORM F_BATCH_INPUT.
+
+ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_SELECT_TABLE_INSERCAO
+*&---------------------------------------------------------------------*
+*& text
+
+FORM f_select_table_insercao .
+ LOOP AT LW_TABELA_INTERNA INTO WW_TABELA.
+         IF WW_TABELA-MATNR IS NOT INITIAL. " AND WW_TABELA-KWMENG IS NOT INITIAL.
+           "MESSAGE 'DADO INSERIDO ' TYPE 'I'.
+           "WW_TABELA-BRGEW = 10.
+           CALL FUNCTION 'CONVERSION_EXIT_MATN1_INPUT'
+             EXPORTING
+               input              = WW_TABELA-MATNR
+            IMPORTING
+              OUTPUT             = WW_TABELA-MATNR
+                     .
+           IF sy-subrc <> 0.
+* Implement suitable error handling here
+           ENDIF.
+           ENDIF.
+           SELECT  MAKT~MAKTX, MARA~MEINS, MARA~BRGEW, MARA~GEWEI, MARA~MTART
+           FROM  MARA
+           INNER JOIN MAKT ON MAKT~MATNR = MARA~MATNR
+           INTO TABLE @LWT_INFO
+           WHERE MARA~MATNR = @WW_TABELA-MATNR.
+             IF SY-SUBRC IS INITIAL.
+            LOOP AT LWT_INFO INTO WWT_INFO.
+             WW_TABELA-MAKTX = WWT_INFO-MAKT.
+             WW_TABELA-MEINS = WWT_INFO-MEINS.
+             WW_TABELA-BRGEW = WWT_INFO-BRGEW.
+             WW_TABELA-GEWEI = WWT_INFO-GEWEI.
+             WW_TABELA-MTART = WWT_INFO-MTART.
+
+            IF WW_TABELA-MARK = 'X'.
+              WW_TABELA-EMBALAGEM = 'X'.
+            ENDIF.
+            MODIFY  LW_TABELA_INTERNA FROM WW_TABELA.
+            ENDLOOP.
+            ENDIF.
+       ENDLOOP.
+   ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_BATCH_INPUT
+*&---------------------------------------------------------------------*
+*& text
+
+FORM f_batch_input .
+
+DATA: lt_batch_input TYPE TABLE OF bdcdata.
+            DATA: lw_batch_input TYPE bdcdata.
+            DATA: LT_MENSAGENS TYPE TABLE OF BDCMSGCOLL.
+            DATA: LW_MENSAGENS TYPE BDCMSGCOLL.
+            DATA: v_kweng(10).
+            DATA: v_kunnr(10).
+            DATA: V_MENS TYPE VBAP-VBELN.
+            v_kunnr = VBAK-KUNNR.
+            v_kweng = WW_TABELA-KWMENG.
+
+            lw_batch_input-program  = 'SAPMV45A'.
+            lw_batch_input-dynpro   = '0101'.
+            lw_batch_input-dynbegin = 'X'.
+            lw_batch_input-fnam     = ''.
+            lw_batch_input-fval     = ''.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BDC_OKCODE'.
+            lw_batch_input-fval     = '=ENT2'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+             lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'VBAK-AUART'.
+            lw_batch_input-fval     = 'ZORB'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'VBAK-VKORG'.
+            lw_batch_input-fval     = VBAK-VKORG."'BR10'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'VBAK-VTWEG'.
+            lw_batch_input-fval     =  VBAK-VTWEG.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'VBAK-SPART'.
+            lw_batch_input-fval     =  VBAK-SPART.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+
+            lw_batch_input-program  = 'SAPMV45A'.
+            lw_batch_input-dynpro   = '4001'.
+            lw_batch_input-dynbegin = 'X'.
+            lw_batch_input-fnam     = ''.
+            lw_batch_input-fval     = ''.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BDC_OKCODE'.
+            lw_batch_input-fval     = '=T\02'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'VBKD-BSTKD'.
+            lw_batch_input-fval     = 'TESTEARAUJO'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'KUAGV-KUNNR'.
+            lw_batch_input-fval     = v_kunnr. "VBAK-KUNNR.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = 'SAPMV45A'.
+            lw_batch_input-dynpro   = '4001'.
+            lw_batch_input-dynbegin = 'X'.
+            lw_batch_input-fnam     = ''.
+            lw_batch_input-fval     = ''.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'BDC_OKCODE'.
+            lw_batch_input-fval     = '=SICH'.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'RV45A-MABNR(01)'.
+            lw_batch_input-fval     = WW_TABELA-MATNR.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+            lw_batch_input-program  = ''.
+            lw_batch_input-dynpro   = ''.
+            lw_batch_input-dynbegin = ''.
+            lw_batch_input-fnam     = 'RV45A-KWMENG(01)'.
+            lw_batch_input-fval     =  v_kweng."WW_TABELA-KWMENG.
+            APPEND lw_batch_input TO lt_batch_input.
+            CLEAR lw_batch_input.
+
+
+          CALL TRANSACTION 'VA01' USING lt_batch_input MODE 'N'
+                MESSAGES INTO LT_MENSAGENS.
+          CLEAR LT_BATCH_INPUT.
+          IF SY-SUBRC IS INITIAL.
+              READ TABLE LT_MENSAGENS INTO LW_MENSAGENS
+              WITH KEY MSGID = 'V1'
+                       MSGNR = '311'.
+
+             WT_DOCUMENTO-MATNR = WW_TABELA-MATNR.
+             V_MENS = LW_MENSAGENS-MSGV2.
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+             CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+               EXPORTING
+                 input         = V_MENS
+              IMPORTING
+                OUTPUT        = V_MENS
+                       .
+             WT_DOCUMENTO-VBELN = V_MENS.
+             WT_DOCUMENTO-DATA_CRIACAO = SY-DATUM.
+             WT_DOCUMENTO-PESO_REAL = WW_TABELA-BRGEW.
+             WT_DOCUMENTO-UNIDADE_DE_PESO = WW_TABELA-GEWEI.
+             WT_DOCUMENTO-QTD_EMBALAGENS = V_KWENG.
+             WT_DOCUMENTO-UNID_EMBALAGEM = 'UN'.
+
+           APPEND  WT_DOCUMENTO TO LT_DOCUMENTO.
+           MODIFY ZTJN16_DOCUMENTO FROM WT_DOCUMENTO.
+           MESSAGE LW_MENSAGENS-MSGV2 TYPE 'I'.
+
+          ELSE.
+
+           MESSAGE 'ERRO NA CRIAÇÃO' TYPE 'I'.
+              CLEAR  VBAK-KUNNR.
+              CLEAR  WW_TABELA-MATNR.
+              CLEAR  WW_TABELA-KWMENG.
+              CLEAR  VBAK-VKORG.
+              CLEAR  VBAK-VTWEG.
+              CLEAR VBAK-SPART.
+              CLEAR  LW_TABELA_INTERNA.
+               SET SCREEN 0.
+               LEAVE SCREEN.
+
+
+
+            ENDIF.
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form LIMPAR
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM F_limpar .
+
+LOOP AT LW_TABELA_INTERNA INTO WW_TABELA.
+*           LOOP AT LWT_INFO INTO WWT_INFO.
+             CLEAR WW_TABELA-MATNR.
+             CLEAR WW_TABELA-KWMENG.
+             CLEAR WW_TABELA-MAKTX .
+             CLEAR WW_TABELA-MEINS .
+             CLEAR WW_TABELA-BRGEW .
+             CLEAR WW_TABELA-GEWEI .
+             ClEAR WW_TABELA-MTART.
+             CLEAR  WW_TABELA-EMBALAGEM.
+             MODIFY  LW_TABELA_INTERNA FROM WW_TABELA.
+             MODIFY SCREEN.
+
+ENDLOOP.
+ENDFORM.
+
+____________________________________________
+
+
+
+*&---------------------------------------------------------------------*
+*& Include MZMJN16_CASETOP_TO
+*&---------------------------------------------------------------------*
+
+*&SPWIZARD: DECLARATION OF TABLECONTROL 'TC_RICK' ITSELF
+CONTROLS: TC_RICK TYPE TABLEVIEW USING SCREEN 9100.
+
+*&SPWIZARD: LINES OF TABLECONTROL 'TC_RICK'
+DATA:     G_TC_RICK_LINES  LIKE SY-LOOPC.
+
+DATA:     OK_CODE LIKE SY-UCOMM.
+____________________________________________
+
+
+*&---------------------------------------------------------------------*
+*& Include MZMJN16_CASEO01_PBO
+*&---------------------------------------------------------------------*
+
+*&SPWIZARD: OUTPUT MODULE FOR TC 'TC_RICK'. DO NOT CHANGE THIS LINE!
+*&SPWIZARD: UPDATE LINES FOR EQUIVALENT SCROLLBAR
+MODULE TC_RICK_CHANGE_TC_ATTR OUTPUT.
+  DESCRIBE TABLE LW_TABELA_INTERNA LINES TC_RICK-lines.
+ENDMODULE.
+
+*&SPWIZARD: OUTPUT MODULE FOR TC 'TC_RICK'. DO NOT CHANGE THIS LINE!
+*&SPWIZARD: GET LINES OF TABLECONTROL
+MODULE TC_RICK_GET_LINES OUTPUT.
+  G_TC_RICK_LINES = SY-LOOPC.
+ENDMODULE.
+____________________________________________
+
+*&---------------------------------------------------------------------*
+*& Include MZMJN16_CASEI01_PAI
+*&---------------------------------------------------------------------*
+
+*&SPWIZARD: INPUT MODULE FOR TC 'TC_RICK'. DO NOT CHANGE THIS LINE!
+*&SPWIZARD: MODIFY TABLE
+MODULE TC_RICK_MODIFY INPUT.
+  MODIFY LW_TABELA_INTERNA
+    FROM WW_TABELA
+    INDEX TC_RICK-CURRENT_LINE.
+    IF SY-SUBRC IS NOT INITIAL.
+      APPEND WW_TABELA TO LW_TABELA_INTERNA.
+    ENDIF.
+ENDMODULE.
+
+*&SPWIZARD: INPUT MODUL FOR TC 'TC_RICK'. DO NOT CHANGE THIS LINE!
+*&SPWIZARD: MARK TABLE
+MODULE TC_RICK_MARK INPUT.
+  DATA: g_TC_RICK_wa2 like line of LW_TABELA_INTERNA.
+    if TC_RICK-line_sel_mode = 1
+    and WW_TABELA-MARK = 'X'.
+     loop at LW_TABELA_INTERNA into g_TC_RICK_wa2
+       where MARK = 'X'.
+       g_TC_RICK_wa2-MARK = ''.
+       modify LW_TABELA_INTERNA
+         from g_TC_RICK_wa2
+         transporting MARK.
+     endloop.
+  endif.
+  MODIFY LW_TABELA_INTERNA
+    FROM WW_TABELA
+    INDEX TC_RICK-CURRENT_LINE
+    TRANSPORTING MARK.
+ENDMODULE.
+
+*&SPWIZARD: INPUT MODULE FOR TC 'TC_RICK'. DO NOT CHANGE THIS LINE!
+*&SPWIZARD: PROCESS USER COMMAND
+MODULE TC_RICK_USER_COMMAND INPUT.
+  OK_CODE = SY-UCOMM.
+  PERFORM USER_OK_TC USING    'TC_RICK'
+                              'LW_TABELA_INTERNA'
+                              'MARK'
+                     CHANGING OK_CODE.
+  SY-UCOMM = OK_CODE.
+
+
+ENDMODULE.
+____________________________________________
+*&---------------------------------------------------------------------*
+*& Include MZMJN16_CASEF01_F01
+*&---------------------------------------------------------------------*
+
+*----------------------------------------------------------------------*
+*   INCLUDE TABLECONTROL_FORMS                                         *
+*----------------------------------------------------------------------*
+
+*&---------------------------------------------------------------------*
+*&      Form  USER_OK_TC                                               *
+*&---------------------------------------------------------------------*
+ FORM USER_OK_TC USING    P_TC_NAME TYPE DYNFNAM
+                          P_TABLE_NAME
+                          P_MARK_NAME
+                 CHANGING P_OK      LIKE SY-UCOMM.
+
+*&SPWIZARD: BEGIN OF LOCAL DATA----------------------------------------*
+   DATA: L_OK              TYPE SY-UCOMM,
+         L_OFFSET          TYPE I.
+*&SPWIZARD: END OF LOCAL DATA------------------------------------------*
+
+*&SPWIZARD: Table control specific operations                          *
+*&SPWIZARD: evaluate TC name and operations                            *
+   SEARCH P_OK FOR P_TC_NAME.
+   IF SY-SUBRC <> 0.
+     EXIT.
+   ENDIF.
+
+   L_OFFSET = STRLEN( P_TC_NAME ) + 1.
+   L_OK = P_OK+L_OFFSET.
+*&SPWIZARD: execute general and TC specific operations                 *
+   CASE L_OK.
+     WHEN 'INSR'.                      "insert row
+       PERFORM FCODE_INSERT_ROW USING    P_TC_NAME
+                                         P_TABLE_NAME.
+
+      PERFORM F_SELECT_TABLE_INSERCAO.
+
+       CLEAR P_OK.
+
+     WHEN 'DELE'.                      "delete row
+       PERFORM FCODE_DELETE_ROW USING    P_TC_NAME
+                                         P_TABLE_NAME
+                                         P_MARK_NAME.
+       CLEAR P_OK.
+
+     WHEN 'P--' OR                     "top of list
+          'P-'  OR                     "previous page
+          'P+'  OR                     "next page
+          'P++'.                       "bottom of list
+       PERFORM COMPUTE_SCROLLING_IN_TC USING P_TC_NAME
+                                             L_OK.
+       CLEAR P_OK.
+*     WHEN 'L--'.                       "total left
+*       PERFORM FCODE_TOTAL_LEFT USING P_TC_NAME.
+*
+*     WHEN 'L-'.                        "column left
+*       PERFORM FCODE_COLUMN_LEFT USING P_TC_NAME.
+*
+*     WHEN 'R+'.                        "column right
+*       PERFORM FCODE_COLUMN_RIGHT USING P_TC_NAME.
+*
+*     WHEN 'R++'.                       "total right
+*       PERFORM FCODE_TOTAL_RIGHT USING P_TC_NAME.
+*
+     WHEN 'MARK'.                      "mark all filled lines
+       PERFORM FCODE_TC_MARK_LINES USING P_TC_NAME
+                                         P_TABLE_NAME
+                                         P_MARK_NAME   .
+       CLEAR P_OK.
+
+     WHEN 'DMRK'.                      "demark all filled lines
+       PERFORM FCODE_TC_DEMARK_LINES USING P_TC_NAME
+                                           P_TABLE_NAME
+                                           P_MARK_NAME .
+       CLEAR P_OK.
+
+*     WHEN 'SASCEND'   OR
+*          'SDESCEND'.                  "sort column
+*       PERFORM FCODE_SORT_TC USING P_TC_NAME
+*                                   l_ok.
+     WHEN 'BACK'.
+        LEAVE TO SCREEN 9100.
+
+   ENDCASE.
+
+ ENDFORM.                              " USER_OK_TC
+
+*&---------------------------------------------------------------------*
+*&      Form  FCODE_INSERT_ROW                                         *
+*&---------------------------------------------------------------------*
+ FORM fcode_insert_row
+               USING    P_TC_NAME           TYPE DYNFNAM
+                        P_TABLE_NAME             .
+
+*&SPWIZARD: BEGIN OF LOCAL DATA----------------------------------------*
+   DATA L_LINES_NAME       LIKE FELD-NAME.
+   DATA L_SELLINE          LIKE SY-STEPL.
+   DATA L_LASTLINE         TYPE I.
+   DATA L_LINE             TYPE I.
+   DATA L_TABLE_NAME       LIKE FELD-NAME.
+   FIELD-SYMBOLS <TC>                 TYPE CXTAB_CONTROL.
+   FIELD-SYMBOLS <TABLE>              TYPE STANDARD TABLE.
+   FIELD-SYMBOLS <LINES>              TYPE I.
+*&SPWIZARD: END OF LOCAL DATA------------------------------------------*
+
+   ASSIGN (P_TC_NAME) TO <TC>.
+
+*&SPWIZARD: get the table, which belongs to the tc                     *
+   CONCATENATE P_TABLE_NAME '[]' INTO L_TABLE_NAME. "table body
+   ASSIGN (L_TABLE_NAME) TO <TABLE>.                "not headerline
+
+*&SPWIZARD: get looplines of TableControl                              *
+   CONCATENATE 'G_' P_TC_NAME '_LINES' INTO L_LINES_NAME.
+   ASSIGN (L_LINES_NAME) TO <LINES>.
+
+*&SPWIZARD: get current line                                           *
+   GET CURSOR LINE L_SELLINE.
+   IF SY-SUBRC <> 0.                   " append line to table
+     L_SELLINE = <TC>-LINES + 1.
+*&SPWIZARD: set top line                                               *
+     IF L_SELLINE > <LINES>.
+       <TC>-TOP_LINE = L_SELLINE - <LINES> + 1 .
+     ELSE.
+       <TC>-TOP_LINE = 1.
+     ENDIF.
+   ELSE.                               " insert line into table
+     L_SELLINE = <TC>-TOP_LINE + L_SELLINE - 1.
+     L_LASTLINE = <TC>-TOP_LINE + <LINES> - 1.
+   ENDIF.
+*&SPWIZARD: set new cursor line                                        *
+   L_LINE = L_SELLINE - <TC>-TOP_LINE + 1.
+
+*&SPWIZARD: insert initial line                                        *
+   INSERT INITIAL LINE INTO <TABLE> INDEX L_SELLINE.
+   <TC>-LINES = <TC>-LINES + 1.
+*&SPWIZARD: set cursor                                                 *
+   SET CURSOR 1 L_LINE.
+
+ ENDFORM.                              " FCODE_INSERT_ROW
+
+*&---------------------------------------------------------------------*
+*&      Form  FCODE_DELETE_ROW                                         *
+*&---------------------------------------------------------------------*
+ FORM fcode_delete_row
+               USING    P_TC_NAME           TYPE DYNFNAM
+                        P_TABLE_NAME
+                        P_MARK_NAME   .
+
+*&SPWIZARD: BEGIN OF LOCAL DATA----------------------------------------*
+   DATA L_TABLE_NAME       LIKE FELD-NAME.
+
+   FIELD-SYMBOLS <TC>         TYPE cxtab_control.
+   FIELD-SYMBOLS <TABLE>      TYPE STANDARD TABLE.
+   FIELD-SYMBOLS <WA>.
+   FIELD-SYMBOLS <MARK_FIELD>.
+*&SPWIZARD: END OF LOCAL DATA------------------------------------------*
+
+   ASSIGN (P_TC_NAME) TO <TC>.
+
+*&SPWIZARD: get the table, which belongs to the tc                     *
+   CONCATENATE P_TABLE_NAME '[]' INTO L_TABLE_NAME. "table body
+   ASSIGN (L_TABLE_NAME) TO <TABLE>.                "not headerline
+
+*&SPWIZARD: delete marked lines                                        *
+   DESCRIBE TABLE <TABLE> LINES <TC>-LINES.
+
+   LOOP AT <TABLE> ASSIGNING <WA>.
+
+*&SPWIZARD: access to the component 'FLAG' of the table header         *
+     ASSIGN COMPONENT P_MARK_NAME OF STRUCTURE <WA> TO <MARK_FIELD>.
+
+     IF <MARK_FIELD> = 'X'.
+       DELETE <TABLE> INDEX SYST-TABIX.
+       IF SY-SUBRC = 0.
+         <TC>-LINES = <TC>-LINES - 1.
+       ENDIF.
+     ENDIF.
+   ENDLOOP.
+
+ ENDFORM.                              " FCODE_DELETE_ROW
+
+*&---------------------------------------------------------------------*
+*&      Form  COMPUTE_SCROLLING_IN_TC
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      -->P_TC_NAME  name of tablecontrol
+*      -->P_OK       ok code
+*----------------------------------------------------------------------*
+ FORM COMPUTE_SCROLLING_IN_TC USING    P_TC_NAME
+                                       P_OK.
+*&SPWIZARD: BEGIN OF LOCAL DATA----------------------------------------*
+   DATA L_TC_NEW_TOP_LINE     TYPE I.
+   DATA L_TC_NAME             LIKE FELD-NAME.
+   DATA L_TC_LINES_NAME       LIKE FELD-NAME.
+   DATA L_TC_FIELD_NAME       LIKE FELD-NAME.
+
+   FIELD-SYMBOLS <TC>         TYPE cxtab_control.
+   FIELD-SYMBOLS <LINES>      TYPE I.
+*&SPWIZARD: END OF LOCAL DATA------------------------------------------*
+
+   ASSIGN (P_TC_NAME) TO <TC>.
+*&SPWIZARD: get looplines of TableControl                              *
+   CONCATENATE 'G_' P_TC_NAME '_LINES' INTO L_TC_LINES_NAME.
+   ASSIGN (L_TC_LINES_NAME) TO <LINES>.
+
+
+*&SPWIZARD: is no line filled?                                         *
+   IF <TC>-LINES = 0.
+*&SPWIZARD: yes, ...                                                   *
+     L_TC_NEW_TOP_LINE = 1.
+   ELSE.
+*&SPWIZARD: no, ...                                                    *
+     CALL FUNCTION 'SCROLLING_IN_TABLE'
+          EXPORTING
+               ENTRY_ACT             = <TC>-TOP_LINE
+               ENTRY_FROM            = 1
+               ENTRY_TO              = <TC>-LINES
+               LAST_PAGE_FULL        = 'X'
+               LOOPS                 = <LINES>
+               OK_CODE               = P_OK
+               OVERLAPPING           = 'X'
+          IMPORTING
+               ENTRY_NEW             = L_TC_NEW_TOP_LINE
+          EXCEPTIONS
+*              NO_ENTRY_OR_PAGE_ACT  = 01
+*              NO_ENTRY_TO           = 02
+*              NO_OK_CODE_OR_PAGE_GO = 03
+               OTHERS                = 0.
+   ENDIF.
+
+*&SPWIZARD: get actual tc and column                                   *
+   GET CURSOR FIELD L_TC_FIELD_NAME
+              AREA  L_TC_NAME.
+
+   IF SYST-SUBRC = 0.
+     IF L_TC_NAME = P_TC_NAME.
+*&SPWIZARD: et actual column                                           *
+       SET CURSOR FIELD L_TC_FIELD_NAME LINE 1.
+     ENDIF.
+   ENDIF.
+
+*&SPWIZARD: set the new top line                                       *
+   <TC>-TOP_LINE = L_TC_NEW_TOP_LINE.
+
+
+ ENDFORM.                              " COMPUTE_SCROLLING_IN_TC
+
+*&---------------------------------------------------------------------*
+*&      Form  FCODE_TC_MARK_LINES
+*&---------------------------------------------------------------------*
+*       marks all TableControl lines
+*----------------------------------------------------------------------*
+*      -->P_TC_NAME  name of tablecontrol
+*----------------------------------------------------------------------*
+FORM FCODE_TC_MARK_LINES USING P_TC_NAME
+                               P_TABLE_NAME
+                               P_MARK_NAME.
+*&SPWIZARD: EGIN OF LOCAL DATA-----------------------------------------*
+  DATA L_TABLE_NAME       LIKE FELD-NAME.
+
+  FIELD-SYMBOLS <TC>         TYPE cxtab_control.
+  FIELD-SYMBOLS <TABLE>      TYPE STANDARD TABLE.
+  FIELD-SYMBOLS <WA>.
+  FIELD-SYMBOLS <MARK_FIELD>.
+*&SPWIZARD: END OF LOCAL DATA------------------------------------------*
+
+  ASSIGN (P_TC_NAME) TO <TC>.
+
+*&SPWIZARD: get the table, which belongs to the tc                     *
+   CONCATENATE P_TABLE_NAME '[]' INTO L_TABLE_NAME. "table body
+   ASSIGN (L_TABLE_NAME) TO <TABLE>.                "not headerline
+
+*&SPWIZARD: mark all filled lines                                      *
+  LOOP AT <TABLE> ASSIGNING <WA>.
+
+*&SPWIZARD: access to the component 'FLAG' of the table header         *
+     ASSIGN COMPONENT P_MARK_NAME OF STRUCTURE <WA> TO <MARK_FIELD>.
+
+     <MARK_FIELD> = 'X'.
+  ENDLOOP.
+ENDFORM.                                          "fcode_tc_mark_lines
+
+*&---------------------------------------------------------------------*
+*&      Form  FCODE_TC_DEMARK_LINES
+*&---------------------------------------------------------------------*
+*       demarks all TableControl lines
+*----------------------------------------------------------------------*
+*      -->P_TC_NAME  name of tablecontrol
+*----------------------------------------------------------------------*
+FORM FCODE_TC_DEMARK_LINES USING P_TC_NAME
+                                 P_TABLE_NAME
+                                 P_MARK_NAME .
+*&SPWIZARD: BEGIN OF LOCAL DATA----------------------------------------*
+  DATA L_TABLE_NAME       LIKE FELD-NAME.
+
+  FIELD-SYMBOLS <TC>         TYPE cxtab_control.
+  FIELD-SYMBOLS <TABLE>      TYPE STANDARD TABLE.
+  FIELD-SYMBOLS <WA>.
+  FIELD-SYMBOLS <MARK_FIELD>.
+*&SPWIZARD: END OF LOCAL DATA------------------------------------------*
+
+  ASSIGN (P_TC_NAME) TO <TC>.
+
+*&SPWIZARD: get the table, which belongs to the tc                     *
+   CONCATENATE P_TABLE_NAME '[]' INTO L_TABLE_NAME. "table body
+   ASSIGN (L_TABLE_NAME) TO <TABLE>.                "not headerline
+
+*&SPWIZARD: demark all filled lines                                    *
+  LOOP AT <TABLE> ASSIGNING <WA>.
+
+*&SPWIZARD: access to the component 'FLAG' of the table header         *
+     ASSIGN COMPONENT P_MARK_NAME OF STRUCTURE <WA> TO <MARK_FIELD>.
+
+     <MARK_FIELD> = SPACE.
+  ENDLOOP.
+ENDFORM.                                          "fcode_tc_mark_lines
+*&---------------------------------------------------------------------*
+*& Form F_CALCULA_EMBALAGEM
+*&---------------------------------------------------------------------*
+*& text
+
+*FORM f_calcula_embalagem .
+*
+*  select * "MATNR, MATNR, PESO_MAXIMO, UNID_DE_PESO, CUSTO_UNITARIO, MOEDA, DATA_CRIACAO
+*  FROM ZTJN16_EMBALAGEM
+*  INTO TABLE @LTY_EMBALAGEM.
+*  "WHERE MATNR = @WW_TABELA-MATNR.
+*
+*LOOP AT LTY_EMBALAGEM INTO WTY_EMBALAGEM.
+*
+*READ TABLE lty_embalagem into wty_embalagem with key matnr = ww_tabela-matnr.
+*
+*if sy-subrc = 0.
+** IF WTY_EMBALAGEM-MATNR = WW_TABELA-MATNR.
+**
+*    WW_TABELA-EMBALAGEM = 'X'.
+*modify LW_TABELA_INTERNA from WW_TABELA. "INDEX SY-TABIX.
+*ENDIF.
+*ENDLOOP.
+*
+*
+*ENDFORM.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

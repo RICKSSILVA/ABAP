@@ -1,0 +1,598 @@
+*&---------------------------------------------------------------------*
+*& Report ZABAPR_ZEXEC_AULA08_16
+*&---------------------------------------------------------------------*
+*&EXERCICIO AULA 08 - 05-04-2023.
+*&---------------------------------------------------------------------*
+REPORT ZABAPR_ZEXEC_AULA08_16.
+
+INCLUDE ZABAPR_ZEXEC_AULA08_16_TOP.
+
+INCLUDE ZABAPR_ZEXEC_AULA08_16_SEL.
+
+INCLUDE ZABAPR_ZEXEC_AULA08_16_F01.
+
+START-OF-SELECTION.
+
+PERFORM F_SELECT_DATA_EKPO.
+
+PERFORM F_ALV_RELATORIO.
+____________________________
+*&---------------------------------------------------------------------*
+*& Include          ZABAPR_ZEXEC_AULA08_16_TOP
+*&---------------------------------------------------------------------*
+TABLES: EKPO,
+        MARA.
+
+TYPES: BEGIN OF TY_OUT,
+           box   TYPE C LENGTH 1,
+           EBELN TYPE EKPO-EBELN,
+           EBELP TYPE EKPO-EBELP,
+           MATNR TYPE EKPO-MATNR,
+           BISMT TYPE MARA-BISMT,
+       END OF TY_OUT.
+
+DATA: t_out TYPE TABLE OF ty_out.
+DATA: T_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV,
+      T_EVENTS   TYPE SLIS_T_EVENT.
+	  
+____________________________
+
+*&---------------------------------------------------------------------*
+*& Include          ZABAPR_ZEXEC_AULA08_16_SEL
+*&---------------------------------------------------------------------*
+
+SELECT-OPTIONS: s_infor for EKPO-EBELN.
+
+____________________________
+
+
+*&---------------------------------------------------------------------*
+*& Include          ZABAPR_ZEXEC_AULA08_16_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form F_SELECT_DATA_EKPO
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+
+FORM f_select_data_EKPO.
+
+  DATA lwa_out TYPE TY_OUT.
+
+  SELECT EBELN, EBELP, MATNR
+  FROM EKPO
+  INTO TABLE @DATA(LT_EKPO)
+  WHERE EBELN IN @s_infor.
+    "DELETE ADJACENT DUPLICATES FROM LT_EKPO COMPARING MATNR.
+    "delete ADJACENT DUPLICATES FROM lt_ekpo COMPARING matnr
+IF sy-SUBRC IS INITIAL.
+
+  SORT LT_EKPO BY EBELN.
+
+  IF LT_EKPO[] IS NOT INITIAL.
+
+    SELECT MATNR, BISMT
+    FROM MARA
+    INTO TABLE @DATA(LT_MARA)
+    FOR ALL ENTRIES IN @LT_EKPO
+    WHERE MATNR = @LT_EKPO-MATNR.
+    delete ADJACENT DUPLICATES FROM lt_MARA COMPARING matnr.
+
+
+
+  ENDIF.
+endif.
+
+ IF SY-SUBRC IS INITIAL.
+
+SORT LT_MARA BY matnr.
+
+  LOOP AT  lt_EKPO ASSIGNING FIELD-SYMBOL(<lfs_ekpo>).
+    clear lwa_out.
+    lwa_out-EBELN = <lfs_ekpo>-EBELN.
+    lwa_out-EBELP = <lfs_ekpo>-EBELP.
+    lwa_out-MATNR = <lfs_ekpo>-MATNR.
+
+    READ TABLE lt_MARA ASSIGNING FIELD-SYMBOL(<lfs_mara>)
+    WITH key matnr = <lfs_ekpo>-MATNR
+    BINARY SEARCH.
+    if sy-subrc is initial.
+
+        lwa_out-BISMT = <lfs_mara>-Bismt.
+     endif.
+        APPEND lwa_out TO T_OUT.
+   clear lwa_out.
+  ENDLOOP.
+ ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_ALV_RELATORIO
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+FORM f_alv_relatorio .
+
+  DATA: lwa_layout TYPE SLIS_LAYOUT_ALV. " TIPO SEMPRE DEVE SER ESSE PARA LAYOUT.
+  PERFORM F_PREENCHER_FIELDCAT.
+  PERFORM F_PREENCHE_EVENTO.
+
+  LWA_LAYOUT-ZEBRA = ABAP_TRUE.
+  LWA_LAYOUT-BOX_FIELDNAME = 'BOX'.
+  LWA_LAYOUT-BOX_TABNAME = 'T_OUT'.
+
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+ EXPORTING
+*   I_INTERFACE_CHECK                 = ' '
+*   I_BYPASSING_BUFFER                = ' '
+*   I_BUFFER_ACTIVE                   = ' '
+    I_CALLBACK_PROGRAM                = SY-REPID
+    I_CALLBACK_PF_STATUS_SET          = 'F_STATUS_1001'
+    I_CALLBACK_USER_COMMAND           = 'USER_COMMAND'
+*   I_CALLBACK_TOP_OF_PAGE            = ' '
+*   I_CALLBACK_HTML_TOP_OF_PAGE       = ' '
+*   I_CALLBACK_HTML_END_OF_LIST       = ' '
+*   I_STRUCTURE_NAME                  =
+*   I_BACKGROUND_ID                   = ' '
+*   I_GRID_TITLE                      =
+*   I_GRID_SETTINGS                   =
+     IS_LAYOUT                         = LWA_LAYOUT
+     IT_FIELDCAT                       = T_FIELDCAT[]
+*   IT_EXCLUDING                      =
+*   IT_SPECIAL_GROUPS                 =
+*   IT_SORT                           =
+*   IT_FILTER                         =
+*   IS_SEL_HIDE                       =
+*   I_DEFAULT                         = 'X'
+*   I_SAVE                            = ' '
+*   IS_VARIANT                        =
+     IT_EVENTS                         = T_EVENTS
+*   IT_EVENT_EXIT                     =
+*   IS_PRINT                          =
+*   IS_REPREP_ID                      =
+*   I_SCREEN_START_COLUMN             = 0
+*   I_SCREEN_START_LINE               = 0
+*   I_SCREEN_END_COLUMN               = 0
+*   I_SCREEN_END_LINE                 = 0
+*   I_HTML_HEIGHT_TOP                 = 0
+*   I_HTML_HEIGHT_END                 = 0
+*   IT_ALV_GRAPHICS                   =
+*   IT_HYPERLINK                      =
+*   IT_ADD_FIELDCAT                   =
+*   IT_EXCEPT_QINFO                   =
+*   IR_SALV_FULLSCREEN_ADAPTER        =
+*   O_PREVIOUS_SRAL_HANDLER           =
+* IMPORTING
+*   E_EXIT_CAUSED_BY_CALLER           =
+*   ES_EXIT_CAUSED_BY_USER            =
+  TABLES
+    t_outtab                          = t_out
+* EXCEPTIONS
+*   PROGRAM_ERROR                     = 1
+*   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_PREENCHER_FIELDCAT
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_preencher_fieldcat .
+
+DATA lwa_fieldcat TYPE slis_fieldcat_alv.
+
+  CLEAR lwa_fieldcat.
+
+  lwa_fieldcat-tabname = 'T_OUT'.
+  lwa_fieldcat-fieldname = 'EBELN'.
+  lwa_fieldcat-col_pos = '1'.
+  lwa_fieldcat-seltext_s = 'Pur. Doc.'.
+  lwa_fieldcat-seltext_M = 'Purchasing Doc.'.
+  lwa_fieldcat-seltext_L = 'Purchasing Document'.
+
+  APPEND lwa_fieldcat TO t_fieldcat.
+
+  CLEAR lwa_fieldcat.
+
+  lwa_fieldcat-tabname = 'T_OUT'.
+  lwa_fieldcat-fieldname = 'EBELP'.
+  lwa_fieldcat-col_pos = '2'.
+  lwa_fieldcat-seltext_s = 'ITEM'.
+  lwa_fieldcat-seltext_M = 'ITEM'.
+  lwa_fieldcat-seltext_L = 'ITEM'.
+
+  APPEND lwa_fieldcat TO t_fieldcat.
+
+  CLEAR lwa_fieldcat.
+
+  lwa_fieldcat-tabname = 'T_OUT'.
+  lwa_fieldcat-fieldname = 'MATNR'.
+  lwa_fieldcat-col_pos = '3'.
+  lwa_fieldcat-seltext_s = 'Material'.
+  lwa_fieldcat-seltext_M = 'Material'.
+  lwa_fieldcat-seltext_L = 'Material'.
+
+  APPEND lwa_fieldcat TO t_fieldcat.
+
+CLEAR lwa_fieldcat.
+
+  lwa_fieldcat-tabname = 'T_OUT'.
+  lwa_fieldcat-fieldname = 'BISMT'.
+  lwa_fieldcat-col_pos = '4'.
+  lwa_fieldcat-seltext_s = 'Descricao Material'.
+  lwa_fieldcat-seltext_M = 'Descricao Material'.
+  lwa_fieldcat-seltext_L = 'Descricao Material'.
+
+  APPEND lwa_fieldcat TO t_fieldcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_PREENCHE_EVENTO
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_preenche_evento .
+  CALL FUNCTION 'REUSE_ALV_EVENTS_GET'
+    EXPORTING
+      i_list_type = 0
+    IMPORTING
+      et_events   = t_events.
+
+
+ENDFORM.
+
+
+FORM f_status_1001 USING  extab TYPE slis_t_extab.
+
+  SET PF-STATUS 'F_STATUS_1001' EXCLUDING extab.
+
+ENDFORM.
+
+FORM user_command USING r_ucomm LIKE sy-ucomm
+                  rs_selfield TYPE slis_selfield.
+
+ DATA lwa_out TYPE TY_OUT.
+  CASE r_ucomm.
+    WHEN 'SHOW'.
+
+      READ TABLE t_out INTO lwa_out WITH KEY box = abap_true.
+
+      CALL FUNCTION 'ME_DISPLAY_PURCHASE_DOCUMENT'
+        EXPORTING
+          i_ebeln                    = lwa_out-EBELN
+*         I_EBELP                    =
+*         I_ENJOY                    = 'X'
+*         I_PREVIEW                  =
+*         I_DATA_FROM_BUFFER         =
+*         I_BSTYP                    =
+*         I_DISPLAY_ONLY             = ' '
+*         I_EDIT                     = ' '
+*         I_ETENR                    =
+*         I_DOC_INITIATOR            =
+*         I_COMMIT_WAIT              =
+*       EXCEPTIONS
+*         NOT_FOUND                  = 1
+*         NO_AUTHORITY               = 2
+*         INVALID_CALL               = 3
+*         PREVIEW_NOT_POSSIBLE       = 4
+*         OTHERS                     = 5
+ .
+      IF sy-subrc <> 0.
+*       Implement suitable error handling here
+      ENDIF.
+
+
+    WHEN OTHERS.
+
+
+  ENDCASE.
+
+
+
+ENDFORM.
+
+
+
+
+____________________________
+
+
+*& Form F_SELECT_DATA_EKPO
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+
+FORM f_select_data_EKPO.
+
+  DATA lwa_out TYPE TY_OUT.
+
+  SELECT EBELN, EBELP, MATNR
+  FROM EKPO
+  INTO TABLE @DATA(LT_EKPO)
+  WHERE EBELN IN @s_infor.
+    "DELETE ADJACENT DUPLICATES FROM LT_EKPO COMPARING MATNR.
+    "delete ADJACENT DUPLICATES FROM lt_ekpo COMPARING matnr
+IF sy-SUBRC IS INITIAL.
+
+  SORT LT_EKPO BY EBELN.
+
+  IF LT_EKPO[] IS NOT INITIAL.
+
+    SELECT MATNR, BISMT
+    FROM MARA
+    INTO TABLE @DATA(LT_MARA)
+    FOR ALL ENTRIES IN @LT_EKPO
+    WHERE MATNR = @LT_EKPO-MATNR.
+    delete ADJACENT DUPLICATES FROM lt_MARA COMPARING matnr.
+
+
+
+  ENDIF.
+endif.
+
+ IF SY-SUBRC IS INITIAL.
+
+SORT LT_MARA BY matnr.
+
+  LOOP AT  lt_EKPO ASSIGNING FIELD-SYMBOL(<lfs_ekpo>).
+    clear lwa_out.
+    lwa_out-EBELN = <lfs_ekpo>-EBELN.
+    lwa_out-EBELP = <lfs_ekpo>-EBELP.
+    lwa_out-MATNR = <lfs_ekpo>-MATNR.
+
+    READ TABLE lt_MARA ASSIGNING FIELD-SYMBOL(<lfs_mara>)
+    WITH key matnr = <lfs_ekpo>-MATNR
+    BINARY SEARCH.
+    if sy-subrc is initial.
+
+        lwa_out-BISMT = <lfs_mara>-Bismt.
+     endif.
+        APPEND lwa_out TO T_OUT.
+   clear lwa_out.
+  ENDLOOP.
+ ENDIF.
+ENDFORM.
+
+
+
+FORM f_alv_relatorio .
+
+  DATA: lwa_layout TYPE SLIS_LAYOUT_ALV. " TIPO SEMPRE DEVE SER ESSE PARA LAYOUT.
+  PERFORM F_PREENCHER_FIELDCAT.
+  PERFORM F_PREENCHE_EVENTO.
+
+  LWA_LAYOUT-ZEBRA = ABAP_TRUE.
+  LWA_LAYOUT-BOX_FIELDNAME = 'BOX'.
+  LWA_LAYOUT-BOX_TABNAME = 'T_OUT'.
+
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+ EXPORTING
+*   I_INTERFACE_CHECK                 = ' '
+*   I_BYPASSING_BUFFER                = ' '
+*   I_BUFFER_ACTIVE                   = ' '
+    I_CALLBACK_PROGRAM                = SY-REPID
+    I_CALLBACK_PF_STATUS_SET          = 'F_STATUS_1001'
+    I_CALLBACK_USER_COMMAND           = 'USER_COMMAND'
+*   I_CALLBACK_TOP_OF_PAGE            = ' '
+*   I_CALLBACK_HTML_TOP_OF_PAGE       = ' '
+*   I_CALLBACK_HTML_END_OF_LIST       = ' '
+*   I_STRUCTURE_NAME                  =
+*   I_BACKGROUND_ID                   = ' '
+*   I_GRID_TITLE                      =
+*   I_GRID_SETTINGS                   =
+     IS_LAYOUT                         = LWA_LAYOUT
+     IT_FIELDCAT                       = T_FIELDCAT[]
+*   IT_EXCLUDING                      =
+*   IT_SPECIAL_GROUPS                 =
+*   IT_SORT                           =
+*   IT_FILTER                         =
+*   IS_SEL_HIDE                       =
+*   I_DEFAULT                         = 'X'
+*   I_SAVE                            = ' '
+*   IS_VARIANT                        =
+     IT_EVENTS                         = T_EVENTS
+*   IT_EVENT_EXIT                     =
+*   IS_PRINT                          =
+*   IS_REPREP_ID                      =
+*   I_SCREEN_START_COLUMN             = 0
+*   I_SCREEN_START_LINE               = 0
+*   I_SCREEN_END_COLUMN               = 0
+*   I_SCREEN_END_LINE                 = 0
+*   I_HTML_HEIGHT_TOP                 = 0
+*   I_HTML_HEIGHT_END                 = 0
+*   IT_ALV_GRAPHICS                   =
+*   IT_HYPERLINK                      =
+*   IT_ADD_FIELDCAT                   =
+*   IT_EXCEPT_QINFO                   =
+*   IR_SALV_FULLSCREEN_ADAPTER        =
+*   O_PREVIOUS_SRAL_HANDLER           =
+* IMPORTING
+*   E_EXIT_CAUSED_BY_CALLER           =
+*   ES_EXIT_CAUSED_BY_USER            =
+  TABLES
+    t_outtab                          = t_out
+* EXCEPTIONS
+*   PROGRAM_ERROR                     = 1
+*   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_PREENCHER_FIELDCAT
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_preencher_fieldcat .
+
+DATA lwa_fieldcat TYPE slis_fieldcat_alv.
+
+  CLEAR lwa_fieldcat.
+
+  lwa_fieldcat-tabname = 'T_OUT'.
+  lwa_fieldcat-fieldname = 'EBELN'.
+  lwa_fieldcat-col_pos = '1'.
+  lwa_fieldcat-seltext_s = 'Pur. Doc.'.
+  lwa_fieldcat-seltext_M = 'Purchasing Doc.'.
+  lwa_fieldcat-seltext_L = 'Purchasing Document'.
+
+  APPEND lwa_fieldcat TO t_fieldcat.
+
+  CLEAR lwa_fieldcat.
+
+  lwa_fieldcat-tabname = 'T_OUT'.
+  lwa_fieldcat-fieldname = 'EBELP'.
+  lwa_fieldcat-col_pos = '2'.
+  lwa_fieldcat-seltext_s = 'ITEM'.
+  lwa_fieldcat-seltext_M = 'ITEM'.
+  lwa_fieldcat-seltext_L = 'ITEM'.
+
+  APPEND lwa_fieldcat TO t_fieldcat.
+
+  CLEAR lwa_fieldcat.
+
+  lwa_fieldcat-tabname = 'T_OUT'.
+  lwa_fieldcat-fieldname = 'MATNR'.
+  lwa_fieldcat-col_pos = '3'.
+  lwa_fieldcat-seltext_s = 'Material'.
+  lwa_fieldcat-seltext_M = 'Material'.
+  lwa_fieldcat-seltext_L = 'Material'.
+
+  APPEND lwa_fieldcat TO t_fieldcat.
+
+CLEAR lwa_fieldcat.
+
+  lwa_fieldcat-tabname = 'T_OUT'.
+  lwa_fieldcat-fieldname = 'BISMT'.
+  lwa_fieldcat-col_pos = '4'.
+  lwa_fieldcat-seltext_s = 'Descricao Material'.
+  lwa_fieldcat-seltext_M = 'Descricao Material'.
+  lwa_fieldcat-seltext_L = 'Descricao Material'.
+
+  APPEND lwa_fieldcat TO t_fieldcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_PREENCHE_EVENTO
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_preenche_evento .
+  CALL FUNCTION 'REUSE_ALV_EVENTS_GET'
+    EXPORTING
+      i_list_type = 0
+    IMPORTING
+      et_events   = t_events.
+
+
+ENDFORM.
+
+
+FORM f_status_1001 USING  extab TYPE slis_t_extab.
+
+  SET PF-STATUS 'F_STATUS_1001' EXCLUDING extab.
+
+ENDFORM.
+
+FORM user_command USING r_ucomm LIKE sy-ucomm
+                  rs_selfield TYPE slis_selfield.
+
+ DATA lwa_out TYPE TY_OUT.
+  CASE r_ucomm.
+    WHEN 'SHOW'.
+
+      READ TABLE t_out INTO lwa_out WITH KEY box = abap_true.
+
+      CALL FUNCTION 'ME_DISPLAY_PURCHASE_DOCUMENT'
+        EXPORTING
+          i_ebeln                    = lwa_out-EBELN
+*         I_EBELP                    =
+*         I_ENJOY                    = 'X'
+*         I_PREVIEW                  =
+*         I_DATA_FROM_BUFFER         =
+*         I_BSTYP                    =
+*         I_DISPLAY_ONLY             = ' '
+*         I_EDIT                     = ' '
+*         I_ETENR                    =
+*         I_DOC_INITIATOR            =
+*         I_COMMIT_WAIT              =
+*       EXCEPTIONS
+*         NOT_FOUND                  = 1
+*         NO_AUTHORITY               = 2
+*         INVALID_CALL               = 3
+*         PREVIEW_NOT_POSSIBLE       = 4
+*         OTHERS                     = 5
+ .
+      IF sy-subrc <> 0.
+*       Implement suitable error handling here
+      ENDIF.
+
+
+    WHEN OTHERS.
+
+
+  ENDCASE.
+
+ENDFORM.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  

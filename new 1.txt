@@ -1,0 +1,163 @@
+*&---------------------------------------------------------------------*
+*& Include          ZRJN16I_TOP
+
+*&---------------------------------------------------------------------*
+DATA: it_files TYPE filetable.
+data: wa_files TYPE file_table.
+data: v_rc     type i.
+data: lv_file type string.
+***************************************
+***VARIAVEIS PARA TESTE
+
+DATA: vw_h type c,
+      Vw_MTART(4)  TYPE C,
+      vw_i type c,
+      Vw_MATNR(40) TYPE C,
+      Vw_PESO      TYPE string,
+      Vw_UNID      TYPE string,
+      Vw_CUSTO     TYPE string,
+      Vw_MOEDA     TYPE string,
+      Vw_DATA      TYPE DATS.
+types: BEGIN OF ty_arquivo,
+  linha type c LENGTH 2000,
+  END OF ty_arquivo.
+
+DATA: lt_out TYPE STANDARD TABLE OF ty_arquivo WITH HEADER LINE.
+DATA: wa_out type ty_arquivo.
+SELECTION-SCREEN: BEGIN OF block B1 WITH FRAME TITLE TEXT-001.
+PARAMETERS: pw_path(1024) TYPE C.
+SELECTION-SCREEN: END OF BLOCK B1.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR PW_PATH.
+
+CALL METHOD CL_GUI_FRONTEND_SERVICES=>FILE_OPEN_DIALOG
+CHANGING
+    FILE_TABLE      = IT_FILES
+    RC              = V_RC
+EXCEPTIONS
+    FILE_OPEN_DIALOG_FAILED = 1
+    CNTL_ERROR              = 2
+    ERROR_NO_GUI            = 3
+    NOT_SUPPORTED_BY_GUI    = 4
+OTHERS                      = 5.
+
+IF SY-SUBRC <> 0.
+  message id sy-msgid type sy-msgty number sy-msgno
+  with sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  else.
+    READ TABLE it_files into wa_files index 1.
+    pw_path = wa_files-filename.
+    lv_file = pw_path.
+
+endif.
+
+CALL FUNCTION 'GUI_UPLOAD'
+  EXPORTING
+    filename                      = lv_file
+    FILETYPE                      = 'ASC'
+*   HAS_FIELD_SEPARATOR           = ' '
+*   HEADER_LENGTH                 = 0
+    READ_BY_LINE                  = 'X'
+*   DAT_MODE                      = ' '
+*   CODEPAGE                      = ' '
+*   IGNORE_CERR                   = ABAP_TRUE
+*   REPLACEMENT                   = '#'
+*   CHECK_BOM                     = ' '
+*   VIRUS_SCAN_PROFILE            =
+*   NO_AUTH_CHECK                 = ' '
+* IMPORTING
+*   FILELENGTH                    =
+*   HEADER                        =
+  tables
+    data_tab                      = lt_out
+* CHANGING
+*   ISSCANPERFORMED               = ' '
+ EXCEPTIONS
+   FILE_OPEN_ERROR               = 1
+   FILE_READ_ERROR               = 2
+   NO_BATCH                      = 3
+   GUI_REFUSE_FILETRANSFER       = 4
+   INVALID_TYPE                  = 5
+   NO_AUTHORITY                  = 6
+   UNKNOWN_ERROR                 = 7
+   BAD_DATA_FORMAT               = 8
+   HEADER_NOT_ALLOWED            = 9
+   SEPARATOR_NOT_ALLOWED         = 10
+   HEADER_TOO_LONG               = 11
+   UNKNOWN_DP_ERROR              = 12
+   ACCESS_DENIED                 = 13
+   DP_OUT_OF_MEMORY              = 14
+   DISK_FULL                     = 15
+   DP_TIMEOUT                    = 16
+   OTHERS                        = 17
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+"FORM F_TESTE.
+
+start-of-selection.
+data: passagem type i.
+passagem = 1 .
+
+loop at lt_out into wa_out.
+DATA: v_h type c,
+      V_MTART(4)  TYPE C,
+      v_i type c,
+      V_MATNR(40) TYPE C,
+      V_PESO      TYPE string,
+      V_UNID      TYPE string,
+      V_CUSTO     TYPE string,
+      V_MOEDA     TYPE string,
+      V_DATA      TYPE DATS.
+SPLIT WA_out AT ';' INTO
+                 v_h
+                 V_MTART.
+case passagem.
+  when  1.
+    if v_h = 'H'.
+      VW_MTART = V_MTART.
+      passagem = passagem + 1.
+      ELSE.
+        WRITE: ''.
+
+    endif.
+  when  2.
+    if v_h = 'I'.
+      SPLIT WA_OUT AT ';' INTO
+                 V_I
+                 V_MATNR
+                 V_PESO
+                 V_UNID
+                 V_CUSTO
+                 V_MOEDA
+                 V_DATA.
+
+                 VW_MATNR = V_MATNR.
+                 VW_PESO  = V_PESO.
+                 VW_UNID  = V_UNID.
+                 VW_CUSTO = V_CUSTO.
+                 VW_MOEDA = V_MOEDA.
+                 VW_DATA =  V_DATA.
+     WRITE: 'COM SUCESSO' TYPE 'I'.
+     PASSAGEM = 1.
+     ELSE.
+     PASSAGEM = 1.
+     MESSAGE   'ERRO NO TIPO DE MATERIAL' TYPE 'I'. " &  VW_MTART, 'Faltando o registro I'.
+    ENDIF.
+
+ENDCASE.
+
+ENDLOOP.
+
+
+ENDIF.
+
+
+IF PW_PATH IS NOT INITIAL.
+
+"PERFOM F_TESTE.
+
+
+ENDIF.

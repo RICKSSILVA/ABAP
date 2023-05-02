@@ -1,0 +1,10 @@
+DATA: var TYPE string.
+
+CONCATENATE 'OLA' 'MUNDO '
+  INTO var
+  SEPARATED BY
+  space.
+
+WRITE: var.
+WRITE: 'Olá Mundo - ABAP '.
+WRITE: 'SEGUNDA LINHA'.

@@ -1,0 +1,317 @@
+*&---------------------------------------------------------------------*
+*& Report Z_EXERCICIO_03_02_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT Z_EXERCICIO_03_02_16.
+
+*REALIZAR AS TELAS.
+* DEFINIR OS PARAMETERES.
+* CRIAR AS VARIAVEIS CLIENTE, FILME, VALOR DO FILME- (FIXO EM 5,00), CAMPO DATAS DE RETIRADAS E DEVOLUÇÃO
+* CRIAR BUTTONOPTIN PARA ALUGUEL DIARIA, ALUGUEL SEMANAL E AMBOS EM DEFAULT.
+* CRIAR CHECKBOX - DESCONTO GOLD MARCADO COMO DEFAULT.
+* p_cliente -> cliente
+* p_film -> filme
+* p_val -> valor em float
+* p_ret -> data de retirada.
+* p_dev -> data de devoluçao
+*v_data -> armazenar o diferença do data de entrega - data de retirada.
+*
+*
+*
+*
+*
+data v_calcsem type i.
+DATA: v_cliente(15) type C.
+DATA: v_data type i.
+DATA: v_diaria type p DECIMALS 2.
+DATA: v_semana type p DECIMALS 2.
+DATA: v_cab1(70) type C.
+DATA: v_conc(30) TYPE c.
+DATA: v_auxiliar(15) TYPE c.
+PARAMETERS: p_cli(15) type C OBLIGATORY.
+PARAMETERS: p_fil(30) type C OBLIGATORY.
+PARAMETERS: p_val(5) TYPE p decimals 2  OBLIGATORY.
+PARAMETERS: p_ret type dats DEFAULT SY-DATUM.
+PARAMETERS: p_dev type  dats  OBLIGATORY.
+
+PARAMETERS: diaria RADIOBUTTON GROUP g1,
+            semanal RADIOBUTTON GROUP g1,
+            ambos RADIOBUTTON GROUP g1 DEFAULT 'X'.
+
+PARAMETERS: desc AS CHECKBOX DEFAULT 'X'.
+
+START-OF-SELECTION.
+v_data = p_dev - p_ret.
+
+************************************************
+*p_fil = 'tubarao'.
+*p_val = 5.
+**semanal = 1.
+*p_cli = 'THARAUJO'.
+*v_data = 9.
+**diaria = 1.
+*ambos = 1.
+**p_cli = 'RICARDO'.
+************************************************
+IF diaria is not INITIAL.
+************************************************
+v_diaria = v_data * p_val.
+v_auxiliar = v_data.
+    CONCATENATE:  '| O FILME' p_fil 'será alugado por' v_auxiliar 'dias. |'
+      INTO v_cab1
+      SEPARATED BY ' '.
+    IF p_cli = 'THARAUJO'.
+    v_diaria =  v_diaria - ( ( v_diaria * 5 ) / 100 ).
+
+    ENDIF.
+    WRITE:/.
+    WRITE: (59) SY-ULINE.
+    WRITE:/ v_cab1.
+    WRITE:/'| Valor do aluguel por diária: R$ ',  v_diaria COLOR 3, 59 '|'.
+    WRITE:/'|_________________________________________________________|'.
+
+ENDIF.
+************************************************
+if semanal is not INITIAL.
+************************************************
+* CALCULAR AS SEMANAS CORRETAMENTE**************
+    v_calcsem = ( v_data mod 7 ).
+    v_semana = ( v_data div 7 ).
+    if v_data <= 7.
+      v_semana = 1.
+    else.
+      case v_calcsem.
+      when  0.
+        v_semana = v_semana + 0.
+      when others.
+        v_semana = v_semana + 1.
+      endcase.
+  endif.
+  v_semana = v_semana * p_val * 5.
+  v_auxiliar = v_data.
+*  CONCATENATE: '| O FILME ' p_fil ' será alugado por ' v_auxiliar 'dias.' '|'
+*      INTO v_cab1
+*      SEPARATED BY ' '.
+*   WRITE:  v_cab1.
+
+IF p_cli = 'THARAUJO'.
+  v_semana =  v_semana - ( ( v_semana * 5 ) / 100 ).
+ELSE.
+   CONCATENATE: '| O FILME ' p_fil ' será alugado por ' v_auxiliar 'dias.' '|'
+      INTO v_cab1
+      SEPARATED BY ' '.
+
+   WRITE:  v_cab1.
+ENDIF.
+
+"WRITE:/ v_cab1.
+WRITE:/'|Valor do aluguel por semana: R$ ',  v_semana COLOR 3.
+write 60 '|'.
+WRITE:/ '|'&'_________________________________________________________|' no-gap .
+endif.
+******************************************************************************
+******************************************************************************
+if  ambos is NOT INITIAL.
+******************************************************************************
+v_calcsem = ( v_data mod 7 ).
+v_semana = ( v_data div 7 ).
+    if v_data <= 7.
+
+      v_semana = 1.
+    else.
+      case v_calcsem.
+          when  0.
+          v_semana = v_semana + 0.
+        when others.
+          v_semana = v_semana + 1.
+      endcase.
+    endif.
+****************************termino do calculo da semana.
+
+ v_auxiliar = v_data.
+    IF p_cli = 'THARAUJO'.
+            v_diaria = v_data * p_val.
+            v_semana = v_semana * p_val * 5.
+            v_semana =  v_semana - ( ( v_semana * 5 ) / 100 ).
+            v_diaria =  v_diaria - ( ( v_diaria * 5 ) / 100 ).
+    else.
+
+             v_semana = v_semana * p_val * 5.
+             v_diaria = v_data * p_val.
+
+    endif.
+
+ WRITE: '| Bom dia ', p_cli, ',' NO-GAP.
+ WRITE:/.
+IF  v_diaria GT v_semana.
+
+
+    CONCATENATE:  'O FILME' p_fil 'será alugado por --' v_auxiliar 'dias.'
+          INTO v_cab1
+          SEPARATED BY ' '.
+    WRITE:/'|' , v_cab1.
+    WRITE 60 '|'.
+    WRITE:/'| Valor do aluguel por diária: R$ ',  v_diaria COLOR 6.
+    WRITE 60 '|'.
+    WRITE:/'| Valor do aluguel por semana: R$ ',  v_semana COLOR 3.
+    write 60 '|'.
+    write /.
+
+ELSE.
+     CONCATENATE:  'O FILME' p_fil 'será alugado por --' v_auxiliar 'dias.'
+          INTO v_cab1
+          SEPARATED BY ' '.
+
+    WRITE:  v_cab1.
+    WRITE: (60) SY-ULINE.
+    WRITE 60 '|'.
+    WRITE:/'| Valor do aluguel por diária: R$ ',  v_diaria COLOR 3.
+    WRITE 60 '|'.
+    WRITE:/'| Valor do aluguel por semana: R$ ',  v_semana COLOR 6.
+    write 60 '|'.
+ "   write: (60) sy-uline.
+
+ENDIF.
+ENDIF.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+***************************************
+********inicio do menu
+*v_data = p_dev - p_ret.
+*CONCATENATE 'Boa tarde' p_cli ','
+*  into v_conc SEPARATED BY ' '.
+*
+**WRITE:'Boa tarde', p_cli, ','.
+*WRITE: v_conc.
+*write:/.
+*WRITE: (60) sy-uline.
+*write:/'|'.
+*write: 60 '|'.
+*
+*
+******************final do menu**********
+*IF diaria is not INITIAL.
+*
+* v_diaria = v_data * p_val.
+* v_auxiliar = v_data.
+*CONCATENATE:  '| O FILME' p_fil 'será alugado por' v_auxiliar 'dias.'
+*      INTO v_cab1
+*      SEPARATED BY ' '.
+*IF p_cli = 'THARAUJO'.
+*  v_diaria =  v_diaria - ( ( v_diaria * 5 ) / 100 ).
+*
+*ENDIF.
+*WRITE:/ v_cab1.
+*WRITE:/'| Valor do aluguel por diária: R$ ',  v_diaria COLOR 3.
+*write 60 '|'.
+*write /.
+*write: (60) sy-uline.
+** write:'O valor da diaria é ', v_diaria COLOR 3.
+*ENDIF.
+*
+*
+*
+*
+*if semanal is not INITIAL.
+*
+*  v_semana = ( v_data mod 7 + v_data div 7 ) * p_val * 5.
+*   v_auxiliar = v_data.
+*CONCATENATE:  '| O FILME' p_fil 'será alugado por' v_auxiliar 'dias.'
+*      INTO v_cab1
+*      SEPARATED BY ' '.
+*IF p_cli = 'THARAUJO'.
+*  v_semana =  v_semana - ( ( v_semana * 5 ) / 100 ).
+*
+*ENDIF.
+*WRITE:/ v_cab1.
+*WRITE:/'| Valor do aluguel por semana: R$ ',  v_semana COLOR 3.
+*write 60 '|'.
+*write /.
+*write: (60) sy-uline.
+**  write:'O valor da semanal é ', v_semana COLOR 3.
+*
+*
+*endif.
+*
+*if  ambos is NOT INITIAL.
+*
+* v_diaria = v_data * p_val.
+*
+* v_auxiliar = v_data.
+**CONCATENATE:  '| O FILME' p_fil 'será alugado por' v_auxiliar 'dias.'
+**      INTO v_cab1
+**      SEPARATED BY ' '.
+*
+*CONCATENATE:  '| O FILME' p_fil 'será alugado por' v_auxiliar 'dias.'
+*      INTO v_cab1
+*      SEPARATED BY ' '.
+*
+*IF p_cli = 'THARAUJO'.
+*  v_diaria =  v_diaria - ( ( v_diaria * 5 ) / 100 ).
+*
+*ENDIF.
+*WRITE:/ v_cab1.
+*WRITE:/'| Valor do aluguel por diária: R$ ',  v_diaria COLOR 3.
+*write 60 '|'.
+*write /.
+*write: (60) sy-uline.
+*
+* v_semana = ( v_data mod 7 + v_data div 7 ) * p_val * 5.
+*
+*IF p_cli = 'THARAUJO'.
+*  v_semana =  v_semana - ( ( v_semana * 5 ) / 100 ).
+*
+*ENDIF.
+*WRITE:/ v_cab1.
+*WRITE:/'| Valor do aluguel por semana: R$ ',  v_semana COLOR 3.
+*write 60 '|'.
+*write /.
+*write: (60) sy-uline.
+*
+*
+*
+*
+*
+*
+*
+*
+*
+*ENDIF.
+**
+**v_auxiliar = v_data.
+**
+**
+**CONCATENATE:  '| O FILME' p_fil 'será alugado por' v_auxiliar 'dias.'
+**      INTO v_cab1
+**      SEPARATED BY ' '.
+**
+**WRITE:/ v_cab1.
+**WRITE:/ '|'.
+**WRITE 60 '|'.
+**WRITE:'| Valor do aluguel por semana R$ ', v_semana COLOR 4.
+**WRITE 60 '|'.
+*
+**write:/'o valor da dif', v_da

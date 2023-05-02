@@ -1,0 +1,57 @@
+*&---------------------------------------------------------------------*
+*& Report ZBATCHINPUT16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZBATCHINPUT16.
+
+START-OF-SELECTION.
+"declaracao.
+TABLES MAKT.
+
+PARAMETERS: p_descr TYPE MAKT-MAKTX.
+
+DATA: w_batchinput TYPE BDCdata.
+DATA: t_batchinput TYPE TABLE of BDCdata.
+
+"Mapeamento
+PERFORM f_preenche_batchinput using:
+
+'SAPLMGMM'                                  '0060'  'X',
+'BDC_OKCODE'                               	'=ENTR' '',
+'RMMG1-MBRSH'                              	'1'     '',
+'RMMG1-MTART'                              	'COUP'  '',
+'SAPLMGMM'                                  '0070'  'X',
+'BDC_OKCODE'                               	'=ENTR' '',
+'MSICHTAUSW-KZSEL(01)'                      'X'     '',
+'SAPLMGMM'                                  '4004'  'X',
+'BDC_OKCODE'                                '=BU'   '',
+'MAKT-MAKTX'                                p_descr '',
+'MARA-MEINS'                                'PC'    '',
+'MARA-MTPOS_MARA'                           'NORM'  ''.
+
+call TRANSACTION 'MM01' USING t_batchinput mode 'N'.
+
+if sy-subrc is not initial.
+
+endif.
+
+
+FORM f_preenche_batchinput USING program
+                                 dynpro
+                                 dybegin.
+
+  DATA: w_batchinput TYPE bdcdata.
+
+  IF dybegin IS NOT INITIAL.
+    w_batchinput-program  = program.
+    w_batchinput-dynpro   = dynpro.
+    w_batchinput-dynbegin = dybegin.
+  ELSE.
+    w_batchinput-fnam     = program.
+    w_batchinput-fval     = dynpro.
+  ENDIF.
+
+  APPEND w_batchinput TO t_batchinput.
+
+ENDFORM.

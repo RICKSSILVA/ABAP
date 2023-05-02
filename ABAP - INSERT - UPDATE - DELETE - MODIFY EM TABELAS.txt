@@ -1,0 +1,156 @@
+*&---------------------------------------------------------------------*
+*& Report ZATUALIZABD18
+*&---------------------------------------------------------------------*
+*& AULA DO DIA 04-04-2023.
+*&---------------------------------------------------------------------*
+
+REPORT ZATUALIZABD16.
+
+PARAMETERS: p_codigo type ZFILME16-COD_FILME,
+            p_nome   type ZFILME16-NOME,
+            p_GENERO type ZFILME16-GENERO,
+            p_VALOR TYPE  ZFILME16-VALOR,
+            p_moeda  type ZFILME16-MOEDA,
+            p_estoqu type ZFILME16-ESTOQUE,
+            p_unid   type ZFILME16-UNIDADE.
+
+PARAMETERS: r_ins RADIOBUTTON GROUP g1,
+            r_upd RADIOBUTTON GROUP g1,
+            r_del RADIOBUTTON GROUP g1,
+            r_mod radiobutton group g1,
+            r_drp radiobutton group g1.
+START-OF-SELECTION.
+CASE ABAP_TRUE. "CONSTANTE DE SISTEMA QUE VALEL 'X'.
+  WHEN r_ins.
+    PERFORM f_insert.
+  WHEN r_upd.
+    PERFORM f_update.
+  WHEN r_del.
+    PERFORM f_delete.
+  WHEN r_mod.
+    PERFORM f_modify.
+  WHEN r_drp.
+    PERFORM f_drop.
+
+ENDCASE.
+FORM f_insert.
+  "Declaração da workaerea
+  data: w_filmes type ZFILME16.
+
+
+  w_filmes-cod_filme     = p_codigo.
+  w_filmes-NOME          = p_nome.
+  w_filmes-GENERO        = p_GENERO.
+  w_filmes-VALOR         = p_valor.
+  w_filmes-MOEDA         = p_moeda.
+  w_filmes-ESTOQUE       = p_estoqu.
+  w_filmes-UNIDADE       = p_unid.
+
+
+if w_filmes is not INITIAL.
+  INSERT ZFILME16 from w_filmes.
+  IF SY-SUBRC IS INITIAL.
+    COMMIT WORK AND WAIT.
+  ELSE.
+    ROLLBACK WORK.
+
+  ENDIF.
+
+ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_update
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_update .
+"UPDATE -> ATUALIZA 1 LINHA ESPECIFICA.
+" MODIFY -> ATUALIZA 1 LINHA INTEIRA OU TABELA.
+*  UPDATE TABELA
+*  SET COLUNA = VALOR
+*      COLUNA = VALOR
+*      COLUNA = VALOR
+*      COLUNA = VALOR
+*
+*  WHERE CONDICAO
+  UPDATE ZFILME16
+  SET NOME = P_NOME
+  WHERE COD_FILME = P_CODIGO.
+  IF SY-SUBRC IS INITIAL.
+    COMMIT WORK AND WAIT.
+  ELSE.
+    ROLLBACK WORK.
+  ENDIF.
+
+  ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_modify
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_modify .
+"declaracao.
+DATA: w_filmes TYPE ZFILME16.
+
+"
+"peenchimento.
+ w_filmes-cod_filme     = p_codigo.
+  w_filmes-NOME          = p_nome.
+  w_filmes-GENERO        = p_GENERO.
+  w_filmes-VALOR         = p_valor.
+  w_filmes-MOEDA         = p_moeda.
+  w_filmes-ESTOQUE       = p_estoqu.
+  w_filmes-UNIDADE       = p_unid.
+
+ "comando de banco de dados.
+
+  MODIFY ZFILME16 FROM w_filmes.
+  if SY-SUBRC IS INITIAL.
+    COMMIT WORK AND WAIT.
+  ELSE.
+    ROLLBACK WORK.
+  ENDIF.
+
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_delete
+*&---------------------------------------------------------------------*
+*& EXEMPLO DELETE - DELETOU JÁ ERA. PODEMOS USAR COMO O UPDATE USANDO
+* WHERE E MODIFIY COM TABELA.
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_delete .
+"DELETE EXCLUIDNO A LINHA INFOMRADA.
+  data: w_filmes16 type zfilme16.
+  w_filmes16-cod_filme = p_codigo.
+  DELETE ZFILME16 FROM w_filmes16. " usando workarea.
+
+  if SY-SUBRC IS INITIAL.
+    COMMIT WORK AND WAIT.
+  ELSE.
+    ROLLBACK WORK.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_drop
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_drop .
+
+ENDFORM.

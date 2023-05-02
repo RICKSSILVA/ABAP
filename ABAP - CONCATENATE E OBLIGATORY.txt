@@ -1,0 +1,50 @@
+*&---------------------------------------------------------------------*
+*& Report Z_EXERC_01_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT Z_EXERC_01_16.
+* EXERCICIO 01 - DATA: 28-03-2023
+*
+*********************************,
+
+WRITE 'CADASTRO DE FILMES' .
+
+DATA  v_exe(25) type C.
+DATA data TYPE dats.
+DATA hora type tims.
+DATA msg(9) TYPE C.
+
+data = SY-DATUM.
+hora = SY-TIMLO.
+msg = 'Obrigado!'.
+
+
+
+PARAMETERS: p_usu(15) type c OBLIGATORY,
+            p_cod(5) type N OBLIGATORY,
+            p_nome(15) type C OBLIGATORY,
+            p_tipo(10) type C .
+
+CONCATENATE p_tipo '!'
+  into v_exe.
+
+*CONCATENATE p_cod p_tipo '!' p_nome
+*    INTO v_exe
+*    SEPARATED BY ' ' .
+
+WRITE:  /'BOA TARDE',  p_usu ,
+         /'COD',  p_cod, ' - ',
+        p_nome.
+
+IF p_tipo <> '' .
+
+  WRITE: / 'Filme do tipo', v_exe, / msg ,
+  / data, ' - ', hora.
+ELSE.
+
+  WRITE:/ msg ,
+  / data, ' - ', hora.
+
+ENDIF.
+*WRITE: v_exe.

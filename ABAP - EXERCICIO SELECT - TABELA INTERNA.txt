@@ -1,0 +1,42 @@
+*&---------------------------------------------------------------------*
+*& Report ZEXERCICIO04_01_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZEXERCICIO04_01_16.
+
+TABLES:ZCLIENTE16.
+TYPES: BEGIN OF ty_cliente,
+       CLIENTE TYPE ZCLIENTE16-COD_CLIENTE16,
+       NOME        TYPE ZCLIENTE16-NOME,
+       VIP         TYPE ZCLIENTE16-VIP,
+
+       END OF ty_cliente.
+
+DATA: t_tabela_interna TYPE TABLE of ty_cliente.
+
+
+
+*PARAMETERES: P_CODCLI(01) TYPE C.
+
+SELECT-OPTIONS: S_CODCLI FOR ZCLIENTE16-COD_CLIENTE16.
+SELECT-OPTIONS: S_NOME FOR ZCLIENTE16-NOME.
+
+"1. LISTA DOS CAMPOS A SEREM SELECIONADOS
+
+SELECT COD_CLIENTE16 NOME VIP
+ "2. INFORMAR A  TABELA DE ONDE VEM OS DADOS
+ FROM ZCLIENTE16
+ "3 . INFORMA EM QUAL VARIAVEL A \ESTRUTURA \TABELA INTERNA VAI PREENCHER.
+  INTO TABLE  t_tabela_interna
+
+"4. informar a oondição da seleção.
+
+WHERE COD_CLIENTE16 IN S_CODCLI
+AND   NOME         IN S_NOME.
+
+"5.CRIAÇÃO DA TABELA INTERNA
+
+
+if t_tabela_interna IS NOT INITIAL.
+  ENDIF.

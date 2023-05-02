@@ -1,0 +1,264 @@
+*&---------------------------------------------------------------------*
+*& Report ZRJN16_CASE
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZRJN16_CASE.
+
+INCLUDE ZRJN16I_TOP.
+INCLUDE ZRJN16I_PBO.
+"INCLUDE ZRJN16I_PAI.
+INCLUDE ZRJN16I_F01.
+
+START-OF-SELECTION.
+_________________________
+*&--------------------------------------------------------------------*
+*& Include          ZRJN16I_TOP
+
+TABLES:ZTJN16_EMBALAGEM,
+       vbap.
+DATA: it_files TYPE filetable.
+data: wa_files TYPE file_table.
+data: v_rc     type i.
+data: lv_file type string.
+DATA: VT_MATNR(40) TYPE C.
+DATA: VT_MTART(4) TYPE C.
+DATA: VT_PESO(13) TYPE P DECIMALS 3.
+DATA: VT_UNID(3)  TYPE C.
+DATA: VT_CUSTO(9) TYPE C.
+DATA: VT_MOEDA(5) TYPE C.
+DATA: VT_DATA TYPE STRING.
+***************************************
+***VARIAVEIS PARA TESTE
+DATA: T_TESTE TYPE  ZTJN16_EMBALAGEM.
+DATA: vw_h type c,
+      Vw_MTART(4)  TYPE C,
+      vw_i type c,
+      Vw_MATNR(40) TYPE C,
+      Vw_PESO      TYPE string,
+      Vw_UNID      TYPE string,
+      Vw_CUSTO     TYPE string,
+      Vw_MOEDA     TYPE string,
+      Vw_DATA      TYPE STRING.
+types: BEGIN OF ty_arquivo,
+  linha type c LENGTH 2000,
+  END OF ty_arquivo.
+
+DATA: lt_out TYPE STANDARD TABLE OF ty_arquivo WITH HEADER LINE.
+DATA: wa_out type ty_arquivo.
+
+
+SELECTION-SCREEN: BEGIN OF block B1 WITH FRAME TITLE TEXT-001.
+PARAMETERS: pw_path(1024) TYPE C.
+SELECTION-SCREEN: END OF BLOCK B1.
+
+SELECTION-SCREEN: BEGIN OF BLOCK B2 WITH FRAME TITLE TEXT-002.
+SELECT-OPTIONS: sp_opt for  ZTJN16_EMBALAGEM-MTART.
+SELECTION-SCREEN: END OF BLOCK B2.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR PW_PATH .
+
+CALL METHOD CL_GUI_FRONTEND_SERVICES=>FILE_OPEN_DIALOG
+CHANGING
+    FILE_TABLE      = IT_FILES
+    RC              = V_RC
+EXCEPTIONS
+    FILE_OPEN_DIALOG_FAILED = 1
+    CNTL_ERROR              = 2
+    ERROR_NO_GUI            = 3
+    NOT_SUPPORTED_BY_GUI    = 4
+OTHERS                      = 5.
+
+IF SY-SUBRC <> 0.
+  message id sy-msgid type sy-msgty number sy-msgno
+  with sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  else.
+    READ TABLE it_files into wa_files index 1.
+    pw_path = wa_files-filename.
+    lv_file = pw_path.
+
+CALL FUNCTION 'GUI_UPLOAD'
+  EXPORTING
+    filename                      = lv_file
+    FILETYPE                      = 'ASC'
+  tables
+    data_tab                      = lt_out
+ EXCEPTIONS
+   FILE_OPEN_ERROR               = 1
+   FILE_READ_ERROR               = 2
+   NO_BATCH                      = 3
+   GUI_REFUSE_FILETRANSFER       = 4
+   INVALID_TYPE                  = 5
+   NO_AUTHORITY                  = 6
+   UNKNOWN_ERROR                 = 7
+   BAD_DATA_FORMAT               = 8
+   HEADER_NOT_ALLOWED            = 9
+   SEPARATOR_NOT_ALLOWED         = 10
+   HEADER_TOO_LONG               = 11
+   UNKNOWN_DP_ERROR              = 12
+   ACCESS_DENIED                 = 13
+   DP_OUT_OF_MEMORY              = 14
+   DISK_FULL                     = 15
+   DP_TIMEOUT                    = 16
+   OTHERS                        = 17
+          .
+IF sy-subrc <> 0.
+ENDIF.
+endif.
+
+START-OF-SELECTION.
+perform f_teste.
+
+types: BEGIN OF t_teste,
+ VT_MTART   TYPE ZTJN16_EMBALAGEM-MTART,
+ VT_MATNR     TYPE ZTJN16_EMBALAGEM-MATNR,
+ VT_PESO      TYPE ZTJN16_EMBALAGEM-PESO_MAXIMO,
+ VT_UNID      TYPE ZTJN16_EMBALAGEM-UNID_DE_PESO,
+ VT_CUSTO     TYPE ZTJN16_EMBALAGEM-CUSTO_UNITARIO,
+ VT_MOEDA     TYPE ZTJN16_EMBALAGEM-MOEDA,
+ VT_DATA      TYPE ZTJN16_EMBALAGEM-DATA_CRIACAO,
+
+end of t_teste.
+
+data: passagem type i.
+passagem = 1 .
+loop at lt_out into wa_out.
+data: vl_juncao(40) type c.
+DATA: v_h type c,
+      V_MTART(4)  TYPE C,
+      v_i type c,
+      V_MATNR(40) TYPE C,
+      V_PESO      TYPE string,
+      V_UNID      TYPE string,
+      V_CUSTO     TYPE string,
+      V_MOEDA     TYPE string,
+      V_DATA      TYPE STRING.
+
+SPLIT WA_out AT ';' INTO
+                 v_h
+                 V_MTART.
+case passagem.
+  when  1.
+    if v_h = 'H'.
+      VW_MTART = V_MTART.
+      passagem = 2.
+      ELSE.
+        WRITE:/ '    ' COLOR 6, 'ERRO FALTANDO LINHA H' COLOR 6.
+        passagem = 1.
+    endif.
+  when  2.
+    if v_h = 'I'.
+      DATA: VL_MTART TYPE STRING.
+      VL_MTART = VW_MTART.
+      SPLIT WA_OUT AT ';' INTO
+                 V_I
+                 V_MATNR
+                 V_PESO
+                 V_UNID
+                 V_CUSTO
+                 V_MOEDA
+                 V_DATA.
+                 VW_MTART = VL_MTART.
+                 VW_MATNR = V_MATNR.
+                 VW_PESO  = V_PESO.
+                 VW_UNID  = V_UNID.
+                 VW_CUSTO = V_CUSTO.
+                 VW_MOEDA = V_MOEDA.
+                 VW_DATA =  V_DATA.
+
+                  IF VW_MATNR = ''.
+                    WRITE: / 'ERRO NO TIPO DE MATERIAL- FALTANDO O CAMPO - MTART ' COLOR 6.
+                  ELSEIF VW_PESO = ''.
+                      WRITE: / 'ERRO NO TIPO DE MATERIAL- FALTANDO O CAMPO - PESO ' COLOR 6.
+                  ELSEIF VW_UNID = ''.
+                      WRITE: / 'ERRO NO TIPO DE MATERIAL- FALTANDO O CAMPO - UNIDADE ' COLOR 6.
+                  ELSEIF VW_CUSTO = ''.
+                     WRITE: / 'ERRO NO TIPO DE MATERIAL- FALTANDO O CAMPO - CUSTO ' COLOR 6.
+                  ELSEIF  VW_MOEDA = ''.
+                     WRITE: / 'ERRO NO TIPO DE MATERIAL- FALTANDO O CAMPO - MOEDA ' COLOR 6.
+                  ELSEIF  VW_DATA = ''.
+                     WRITE: / 'ERRO NO TIPO DE MATERIAL- FALTANDO O CAMPO - DATA ' COLOR 6.
+                  ELSE.
+*                   SELECT SINGLE *
+*                   FROM  ZTJN16_EMBALAGEM
+*                   INTO T_TESTE
+*                   WHERE MTART = VW_MTART.
+                 "IF SY-SUBRC IS NOT INITIAL.
+                    "CASE SP_OPT.
+                    "WHEN ''.
+                     T_TESTE-MTART            = VW_MTART.
+                     T_TESTE-MATNR            = VW_MATNR.
+                     T_TESTE-PESO_MAXIMO      = VW_PESO.
+                     T_TESTE-UNID_DE_PESO     = VW_UNID.
+                     T_TESTE-CUSTO_UNITARIO   = VW_CUSTO.
+                     T_TESTE-MOEDA            = VW_MOEDA.
+                     T_TESTE-DATA_CRIACAO     = VW_DATA.
+
+                     INSERT  ZTJN16_EMBALAGEM FROM T_TESTE.
+
+                          IF SY-SUBRC IS INITIAL.
+                          CONCATENATE  'SUCESSO NO TIPO DE MATERIAL' VW_MTART INTO VL_JUNCAO SEPARATED BY ''.
+                          write:/ VW_MTART color 5, VL_JUNCAO COLOR 5.
+                          commit work AND WAIT.
+
+                          ENDIF.
+                     " WHEN OTHERS.
+
+                     "ENDCASE.
+
+
+                 "ENDIF.
+
+*                 IF SY-SUBRC IS INITIAL.
+*                 CONCATENATE  'SUCESSO NO TIPO DE MATERIAL' VW_MTART INTO VL_JUNCAO SEPARATED BY ''.
+*                 write:/ VW_MTART color 5, VL_JUNCAO COLOR 5.
+*                 commit work AND WAIT.
+*
+*                 ENDIF.
+                 ENDIF.
+
+     PASSAGEM = 1.
+
+     ELSE.
+
+     CONCATENATE    'ERRO NO TIPO DE MATERIAL '   VW_MTART  into vl_juncao separated by ''.
+     write:/ VW_MTART COLOR 6, vl_juncao COLOR 6.
+
+
+     SPLIT WA_out AT ';' INTO
+                 v_h
+                 V_MTART.
+     VW_MTART = V_MTART.
+
+     PASSAGEM = 2.
+     "CLEAR VW_MTART.
+     ENDIF.
+
+
+ENDCASE.
+
+ENDLOOP.
+_________________________
+
+*&---------------------------------------------------------------------*
+*& Include          ZRJN16I_PBO
+*&---------------------------------------------------------------------*
+
+_________________________
+
+*&---------------------------------------------------------------------*
+*& Include          ZRJN16I_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form f_teste
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_teste .
+
+ENDFORM.
+
+_________________________

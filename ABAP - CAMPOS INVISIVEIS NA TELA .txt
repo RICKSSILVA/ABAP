@@ -1,0 +1,123 @@
+*&---------------------------------------------------------------------*
+*& Report Z_ABAPR_EXER10_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT Z_ABAPR_EXER10_16.
+
+INCLUDE Z_ABAPI_EXER10_16_TOP.
+
+INCLUDE Z_APAPI_EXER10_16_PBO.
+
+INCLUDE Z_APAPI_EXER10_16_PAI.
+
+INCLUDE Z_APAPI_EXER10_16_F01.
+
+START-OF-SELECTION.
+
+CALL SCREEN 9000.
+
+_________________________________________
+*&---------------------------------------------------------------------*
+*& Include          Z_ABAPI_EXER10_16_TOP
+*&---------------------------------------------------------------------*
+
+DATA: S_VEZES(10) TYPE I.
+
+DATA: V_IMPAR TYPE FLAG.
+
+DATA: V_MULT10 TYPE FLAG.
+
+_________________________________________
+*&---------------------------------------------------------------------*
+*& Include          Z_APAPI_EXER10_16_PBO
+*&---------------------------------------------------------------------*
+MODULE preenche_tela OUTPUT.
+
+  PERFORM f_preenche_tela.
+
+
+ENDMODULE.
+
+_________________________________________
+
+*&---------------------------------------------------------------------*
+*& Include          Z_APAPI_EXER10_16_PAI
+*&---------------------------------------------------------------------*
+
+_________________________________________
+*&---------------------------------------------------------------------*
+*& Include          Z_APAPI_EXER10_16_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form f_preenche_tela
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_preenche_tela .
+
+IF V_IMPAR IS NOT INITIAL.
+
+LOOP  AT SCREEN.
+
+  IF SCREEN-NAME = 'V_VERM'
+    OR SCREEN-NAME = 'V_AMAR'
+    OR SCREEN-NAME = 'V_VERDE'.
+    SCREEN-INVISIBLE = 0.
+  ENDIF.
+     MODIFY SCREEN.
+    ENDLOOP.
+
+ELSE.
+  LOOP AT SCREEN.
+  IF SCREEN-NAME = 'V_VERM'
+    OR SCREEN-NAME = 'V_AMAR'
+    OR SCREEN-NAME = 'V_VERDE'.
+
+    SCREEN-INVISIBLE = 1.
+
+   ENDIF.
+
+    MODIFY SCREEN.
+
+  ENDLOOP.
+ENDIF.
+
+
+IF V_MULT10 IS NOT INITIAL.
+  LOOP AT SCREEN.
+    IF SCREEN-NAME = 'V_CINZA'
+      OR SCREEN-NAME = 'V_ROXO'.
+      SCREEN-INVISIBLE = 0.
+    ENDIF.
+    MODIFY SCREEN.
+   ENDLOOP.
+
+ ELSE.
+    LOOP AT SCREEN.
+      IF SCREEN-NAME = 'V_CINZA'
+       OR SCREEN-NAME = 'V_ROXO'.
+        SCREEN-INVISIBLE = 1.
+      ENDIF.
+      MODIFY SCREEN.
+    ENDLOOP.
+
+
+      ENDIF.
+
+ENDFORM.
+_________________________________________
+
+
+
+
+
+
+
+
+
+
+

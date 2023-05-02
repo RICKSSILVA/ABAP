@@ -1,0 +1,27 @@
+*&---------------------------------------------------------------------*
+*& Report Z_AULA_03_03_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT Z_AULA_03_03_16.
+
+data:v_resultado type i.
+
+PARAMETERS: p_valor type i.
+PARAMETERS: p_div type i.
+
+
+
+START-OF-SELECTION.
+write: (30) '---------------------------------'.
+write: (30) SY-ULINE.
+v_resultado = p_valor / p_div.
+write:'O valor é ', v_resultado.
+
+v_resultado = p_valor DIV p_div.
+
+WRITE:/' Valor div p_div', v_resultado.
+v_resultado = p_valor MOD p_div.
+WRITE:/' | Valor MOD p_div', v_resultado.
+write: 30 '|'.
+write: (30) SY-ULINE.

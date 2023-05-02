@@ -1,0 +1,43 @@
+*&---------------------------------------------------------------------*
+*& Report Z_AULA3_02_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT Z_AULA3_02_16.
+
+DATA v_cont  TYPE I.
+DATA v_contador type i.
+
+v_cont = 0.
+v_contador = 0.
+PARAMETERS: p_vez TYPE I.
+
+START-OF-SELECTION.
+
+"DO. ENDDO.
+"WHILE. ENDWHILE.
+*
+DO.
+  if v_cont >= p_vez.
+    exit.
+    v_cont = v_cont + 1.
+
+    WRITE:/ 'DO. ENDDO.', v_cont.
+    else.
+      v_cont = v_cont + 1.
+      write:/.
+      write: 35  'DO. ENDDO.', v_cont.
+
+  endif.
+
+ENDDO.
+
+
+clear v_contador.
+
+while v_contador <= p_vez.
+    WRITE:/ 'WHILE. ENDWHILE.'.
+    v_contador = v_contador + 1.
+
+
+ENDWHILE.

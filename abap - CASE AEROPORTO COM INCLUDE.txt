@@ -1,0 +1,602 @@
+*&---------------------------------------------------------------------*
+*& Report ZSEXTOU16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZSEXTOU16.
+
+
+INCLUDE ZSEXTOU16_TOP.
+INCLUDE ZSEXTOU16_PBO.
+"INCLUDE ZSEXTOU16_PAI.
+INCLUDE ZSEXTOU16_F01.
+
+
+START-OF-SELECTION.
+
+
+PERFORM F_SELECT.
+
+PERFORM F_ALV_ORIGEM.
+
+_______________
+*&---------------------------------------------------------------------*
+*& Include          ZSEXTOU16_TOP
+*&---------------------------------------------------------------------*
+
+TABLES: ZAEROPORTO.
+
+DATA: lW_LAYOUT TYPE SLIS_LAYOUT_ALV.
+DATA: WT_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV.
+
+DATA: WT_OUTPUT TYPE ZDESTINO16.
+
+DATA: WT_EVENTS TYPE SLIS_T_EVENT.
+
+CONSTANTS C_MULT TYPE P DECIMALS 2 VALUE '56.43'.
+
+TYPES: BEGIN OF ty_VOO,
+         MARK     TYPE FLAG,
+         cod_aero TYPE C LENGTH 3,
+         nome     TYPE C LENGTH 30,
+       END OF ty_VOO.
+
+
+
+DATA: t_voo TYPE TABLE OF ty_voo.
+DATA: WV_SEL(4) TYPE C.
+DATA: WV_DEST(4) TYPE C.
+
+DATA: lt_temp TYPE TABLE OF TY_VOO.
+_______________
+*&---------------------------------------------------------------------*
+*& Include          ZSEXTOU16_PBO
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Include          ZSEXTOU16_F01
+*&---------------------
+*----------------------------------------------*
+SELECTION-SCREEN: BEGIN OF BLOCK B1 WITH FRAME TITLE TEXT-001.
+PARAMETERS: V_QUANT TYPE I.
+SELECTION-SCREEN: END OF BLOCK B1.
+
+SELECTION-SCREEN: BEGIN OF BLOCK B2 WITH FRAME TITLE TEXT-002.
+PARAMETERS: V_MALAS TYPE I.
+SELECTION-SCREEN: END OF BLOCK B2.
+*&---------------------------------------------------------------------*
+*& Form F_SELECT
+*&---------------------------------------------------------------------*
+
+FORM f_select .
+
+DATA: lwy_voo type ty_voo.
+DATA: IDD07V TYPE TABLE OF DD07V WITH HEADER LINE.
+
+select COD_AERO
+ from ZAEROPORTO
+ INTO TABLE @DATA(Lt_CLIENTE).
+
+    IF SY-SUBRC IS INITIAL.
+        LOOP AT LT_CLIENTE INTO DATA(Lw_CLIENTE).
+        MOVE-CORRESPONDING  Lw_CLIENTE TO LWy_voo.
+        CALL FUNCTION 'DD_DOMVALUES_GET'
+          EXPORTING
+            domname              = 'ZCOD_AERO'
+            TEXT                 = 'X'
+            LANGU                = SY-LANGU
+*           BYPASS_BUFFER        = ' '
+*         IMPORTING
+*           RC                   =
+          tables
+            dd07v_tab            = IDD07V
+         EXCEPTIONS
+           WRONG_TEXTFLAG       = 1
+           OTHERS               = 2
+.
+       LOOP AT IDD07V INTO DATA(LWA_DOMNAME).
+        IF LWA_DOMNAME-domvalue_l = LWY_VOO-COD_AERO.
+          MOVE LWA_DOMNAME-ddtext TO LWY_VOO-NOME.
+        ENDIF.
+       ENDLOOP.
+
+        IF sy-subrc <> 0.
+* Implement suitable error handling here
+        ENDIF.
+        APPEND LWY_VOO             TO T_VOO.
+      ENDLOOP.
+
+    ENDIF.
+   " PERFORM F_ALV_ORIGEM.
+
+ENDFORM.
+
+
+*&---------------------------------------------------------------------*
+*& Form F_ALV_ORIGEM
+*&---------------------------------------------------------------------*
+FORM f_alv_origem .
+"DATA: LT_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV.
+lW_LAYOUT-ZEBRA = 'X'.
+lW_LAYOUT-COLWIDTH_OPTIMIZE = 'X'.
+lW_LAYOUT-BOX_FIELDNAME = 'MARK'.
+CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+ EXPORTING
+    I_STRUCTURE_NAME             = 'ZORIGEM16'
+  CHANGING
+    ct_fieldcat                  = WT_FIELDCAT
+ EXCEPTIONS
+   INCONSISTENT_INTERFACE       = 1
+   PROGRAM_ERROR                = 2
+   OTHERS                       = 3
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+DELETE WT_FIELDCAT WHERE FIELDNAME ='MARK'.
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+ EXPORTING
+    IS_LAYOUT                         = LW_LAYOUT
+    I_CALLBACK_PROGRAM                = SY-CPROG
+   I_CALLBACK_PF_STATUS_SET          = 'F_PF_STATUS_SET'
+   I_CALLBACK_USER_COMMAND           = 'F_USER_COMMAND'
+   IT_FIELDCAT                       = WT_FIELDCAT
+*   it_events                = Wt_events
+    TABLES
+    t_outtab                          = T_VOO
+
+ EXCEPTIONS
+   PROGRAM_ERROR                     = 1
+   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+ENDFORM.
+
+FORM F_PF_STATUS_SET using LIST.
+SET PF-STATUS 'STATUS_GUI'.
+ENDFORM.
+
+
+FORM F_USER_COMMAND USING UCOMM VARIABLE TYPE SLIS_SELFIELD.
+CASE UCOMM.
+  WHEN 'ORIGEM'.
+  PERFORM F_ESCOLHE_ORIGEM.
+ WHEN 'DESTINO'.
+   WHEN  OTHERS.
+ENDCASE.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_ESCOLHE_ORIGEM
+*&---------------------------------------------------------------------*
+FORM f_escolhe_origem .
+
+  PERFORM F_EVENTO.
+
+LOOP AT T_VOO INTO DATA(TW_VOO2).
+    CASE TW_VOO2-MARK.
+      WHEN 'X'.
+      WV_SEL = TW_VOO2-COD_AERO.
+      PERFORM F_ALV_DESTINO.
+        WHEN OTHERS.
+    ENDCASE.
+ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_ALV_DESTINO
+*&---------------------------------------------------------------------*
+FORM f_alv_destino .
+data(lt_temp) = t_voo[].
+delete lt_temp where cod_aero = wv_sel.
+lW_LAYOUT-ZEBRA = 'X'.
+lW_LAYOUT-COLWIDTH_OPTIMIZE = 'X'.
+lW_LAYOUT-BOX_FIELDNAME = 'MARK'.
+
+
+
+  CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+  EXPORTING
+     I_STRUCTURE_NAME             = 'ZDESTINO16'
+    CHANGING
+      ct_fieldcat                  = WT_FIELDCAT
+   EXCEPTIONS
+     INCONSISTENT_INTERFACE       = 1
+     PROGRAM_ERROR                = 2
+     OTHERS                       = 3
+          .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+DELETE WT_FIELDCAT WHERE FIELDNAME ='MARK'.
+
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+ EXPORTING
+
+   I_CALLBACK_PROGRAM                = SY-CPROG
+   I_CALLBACK_PF_STATUS_SET          = 'F_PF_STATUS_SET2'
+   I_CALLBACK_USER_COMMAND           = 'F_USER_COMMAND2'
+   IS_LAYOUT                         = LW_LAYOUT
+   IT_FIELDCAT                       = WT_FIELDCAT
+   it_events                         = wt_events
+  TABLES
+    t_outtab                          = lt_temp
+ EXCEPTIONS
+   PROGRAM_ERROR                     = 1
+   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+ENDFORM.
+
+FORM F_PF_STATUS_SET2 using LIST.
+SET PF-STATUS 'STATUS_GUI2'.
+ENDFORM.
+
+
+FORM F_USER_COMMAND2 USING UCOMM
+                           VARIABLE TYPE SLIS_SELFIELD.
+CASE UCOMM.
+  WHEN 'BACK'.
+
+  WHEN 'CALCULAR'.
+  WV_DEST = VARIABLE-VALUE.
+  VARIABLE-REFRESH = ABAP_TRUE.
+    MESSAGE WV_DEST TYPE 'I'.
+    PERFORM CALCULAR.
+
+  WHEN OTHERS.
+ENDCASE.
+  CLEAR wv_dest.
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form F_EVENTO
+*&---------------------------------------------------------------------*
+
+FORM f_evento .
+CALL FUNCTION 'REUSE_ALV_EVENTS_GET'
+ EXPORTING
+   I_LIST_TYPE           = 0
+ IMPORTING
+   ET_EVENTS             = WT_EVENTS
+
+ EXCEPTIONS
+   LIST_TYPE_WRONG       = 1
+   OTHERS                = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CALCULAR
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM calcular .
+
+DATA:  COORDX_DEST TYPE GEOLAT,
+       COORDY_DEST TYPE GEOLON,
+       COORDX_EMBARQUE TYPE GEOLAT,
+       COORDY_EMBARQUE TYPE GEOLON,
+       TAXA_EMBARQUE TYPE FLOAT,
+       TAXA_BAGAGUEM  TYPE FLOAT,
+       C_REAL(2) TYPE C  VALUE 'R$',
+       DISTANCIA TYPE P DECIMALS 2.
+
+SELECT COD_AERO, COORDX, COORDY, TAXA_EMBARQUE, TAXA_BAGAGUEM
+
+FROM ZAEROPORTO
+INTO TABLE @DATA(LT_VOO).
+
+IF SY-SUBRC = 0.
+
+LOOP AT LT_VOO INTO DATA(LWA_VOO).
+   IF LWA_VOO-COD_AERO = WV_SEL. "  ORIGEM
+      COORDX_EMBARQUE = LWA_VOO-COORDX.
+      COORDY_EMBARQUE = LWA_VOO-COORDY.
+      TAXA_EMBARQUE = LWA_VOO-TAXA_EMBARQUE.
+      TAXA_BAGAGUEM = LWA_VOO-TAXA_BAGAGUEM.
+   ENDIF.
+
+   IF LWA_VOO-COD_AERO = WV_DEST. " DESTINO.
+      COORDX_DEST = LWA_VOO-COORDX.
+      COORDY_DEST = LWA_VOO-COORDY.
+
+   ENDIF.
+ENDLOOP.
+
+ENDIF.
+
+DISTANCIA = ( ( COORDX_DEST - ( COORDX_EMBARQUE ) ) * ( COORDX_DEST - ( COORDX_EMBARQUE ) ) ) + ( ( COORDY_DEST - ( COORDY_EMBARQUE )  ) * ( COORDY_DEST - ( COORDY_EMBARQUE )  ) ).
+
+DISTANCIA = ( SQRT( DISTANCIA ) ) .
+
+DISTANCIA = DISTANCIA * C_MULT.
+
+IF V_QUANT > 0.
+
+  DISTANCIA = ( V_QUANT * ( DISTANCIA  + TAXA_EMBARQUE ) ) + ( V_MALAS * TAXA_BAGAGUEM ).
+
+  MESSAGE I003(ZMENSAGEM16) WITH  C_REAL  DISTANCIA.
+  CLEAR DISTANCIA.
+
+
+ELSE.
+
+  MESSAGE 'FAVOR ENTRAR COM A QUANTIDE DE PASSAGEIROS' TYPE 'I'.
+ENDIF.
+
+ENDFORM.
+
+_______________________________
+
+FORM f_select .
+
+DATA: lwy_voo type ty_voo.
+DATA: IDD07V TYPE TABLE OF DD07V WITH HEADER LINE.
+
+select COD_AERO
+ from ZAEROPORTO
+ INTO TABLE @DATA(Lt_CLIENTE).
+
+    IF SY-SUBRC IS INITIAL.
+        LOOP AT LT_CLIENTE INTO DATA(Lw_CLIENTE).
+        MOVE-CORRESPONDING  Lw_CLIENTE TO LWy_voo.
+        CALL FUNCTION 'DD_DOMVALUES_GET'
+          EXPORTING
+            domname              = 'ZCOD_AERO'
+            TEXT                 = 'X'
+            LANGU                = SY-LANGU
+*           BYPASS_BUFFER        = ' '
+*         IMPORTING
+*           RC                   =
+          tables
+            dd07v_tab            = IDD07V
+         EXCEPTIONS
+           WRONG_TEXTFLAG       = 1
+           OTHERS               = 2
+.
+       LOOP AT IDD07V INTO DATA(LWA_DOMNAME).
+        IF LWA_DOMNAME-domvalue_l = LWY_VOO-COD_AERO.
+          MOVE LWA_DOMNAME-ddtext TO LWY_VOO-NOME.
+        ENDIF.
+       ENDLOOP.
+
+        IF sy-subrc <> 0.
+* Implement suitable error handling here
+        ENDIF.
+        APPEND LWY_VOO             TO T_VOO.
+      ENDLOOP.
+
+    ENDIF.
+   " PERFORM F_ALV_ORIGEM.
+
+ENDFORM.
+
+
+*&---------------------------------------------------------------------*
+*& Form F_ALV_ORIGEM
+*&---------------------------------------------------------------------*
+FORM f_alv_origem .
+"DATA: LT_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV.
+lW_LAYOUT-ZEBRA = 'X'.
+lW_LAYOUT-COLWIDTH_OPTIMIZE = 'X'.
+lW_LAYOUT-BOX_FIELDNAME = 'MARK'.
+CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+ EXPORTING
+    I_STRUCTURE_NAME             = 'ZORIGEM16'
+  CHANGING
+    ct_fieldcat                  = WT_FIELDCAT
+ EXCEPTIONS
+   INCONSISTENT_INTERFACE       = 1
+   PROGRAM_ERROR                = 2
+   OTHERS                       = 3
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+DELETE WT_FIELDCAT WHERE FIELDNAME ='MARK'.
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+ EXPORTING
+    IS_LAYOUT                         = LW_LAYOUT
+    I_CALLBACK_PROGRAM                = SY-CPROG
+   I_CALLBACK_PF_STATUS_SET          = 'F_PF_STATUS_SET'
+   I_CALLBACK_USER_COMMAND           = 'F_USER_COMMAND'
+   IT_FIELDCAT                       = WT_FIELDCAT
+*   it_events                = Wt_events
+    TABLES
+    t_outtab                          = T_VOO
+
+ EXCEPTIONS
+   PROGRAM_ERROR                     = 1
+   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+ENDFORM.
+
+FORM F_PF_STATUS_SET using LIST.
+SET PF-STATUS 'STATUS_GUI'.
+ENDFORM.
+
+
+FORM F_USER_COMMAND USING UCOMM VARIABLE TYPE SLIS_SELFIELD.
+CASE UCOMM.
+  WHEN 'ORIGEM'.
+  PERFORM F_ESCOLHE_ORIGEM.
+ WHEN 'DESTINO'.
+   WHEN  OTHERS.
+ENDCASE.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_ESCOLHE_ORIGEM
+*&---------------------------------------------------------------------*
+FORM f_escolhe_origem .
+
+  PERFORM F_EVENTO.
+
+LOOP AT T_VOO INTO DATA(TW_VOO2).
+    CASE TW_VOO2-MARK.
+      WHEN 'X'.
+      WV_SEL = TW_VOO2-COD_AERO.
+      PERFORM F_ALV_DESTINO.
+        WHEN OTHERS.
+    ENDCASE.
+ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_ALV_DESTINO
+*&---------------------------------------------------------------------*
+FORM f_alv_destino .
+data(lt_temp) = t_voo[].
+delete lt_temp where cod_aero = wv_sel.
+lW_LAYOUT-ZEBRA = 'X'.
+lW_LAYOUT-COLWIDTH_OPTIMIZE = 'X'.
+lW_LAYOUT-BOX_FIELDNAME = 'MARK'.
+
+
+
+  CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+  EXPORTING
+     I_STRUCTURE_NAME             = 'ZDESTINO16'
+    CHANGING
+      ct_fieldcat                  = WT_FIELDCAT
+   EXCEPTIONS
+     INCONSISTENT_INTERFACE       = 1
+     PROGRAM_ERROR                = 2
+     OTHERS                       = 3
+          .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+DELETE WT_FIELDCAT WHERE FIELDNAME ='MARK'.
+
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+ EXPORTING
+
+   I_CALLBACK_PROGRAM                = SY-CPROG
+   I_CALLBACK_PF_STATUS_SET          = 'F_PF_STATUS_SET2'
+   I_CALLBACK_USER_COMMAND           = 'F_USER_COMMAND2'
+   IS_LAYOUT                         = LW_LAYOUT
+   IT_FIELDCAT                       = WT_FIELDCAT
+   it_events                         = wt_events
+  TABLES
+    t_outtab                          = lt_temp
+ EXCEPTIONS
+   PROGRAM_ERROR                     = 1
+   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+ENDFORM.
+
+FORM F_PF_STATUS_SET2 using LIST.
+SET PF-STATUS 'STATUS_GUI2'.
+ENDFORM.
+
+
+FORM F_USER_COMMAND2 USING UCOMM
+                           VARIABLE TYPE SLIS_SELFIELD.
+CASE UCOMM.
+  WHEN 'BACK'.
+
+  WHEN 'CALCULAR'.
+  WV_DEST = VARIABLE-VALUE.
+  VARIABLE-REFRESH = ABAP_TRUE.
+    MESSAGE WV_DEST TYPE 'I'.
+    PERFORM CALCULAR.
+
+  WHEN OTHERS.
+ENDCASE.
+  CLEAR wv_dest.
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form F_EVENTO
+*&---------------------------------------------------------------------*
+
+FORM f_evento .
+CALL FUNCTION 'REUSE_ALV_EVENTS_GET'
+ EXPORTING
+   I_LIST_TYPE           = 0
+ IMPORTING
+   ET_EVENTS             = WT_EVENTS
+
+ EXCEPTIONS
+   LIST_TYPE_WRONG       = 1
+   OTHERS                = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CALCULAR
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM calcular .
+
+DATA:  COORDX_DEST TYPE GEOLAT,
+       COORDY_DEST TYPE GEOLON,
+       COORDX_EMBARQUE TYPE GEOLAT,
+       COORDY_EMBARQUE TYPE GEOLON,
+       TAXA_EMBARQUE TYPE FLOAT,
+       TAXA_BAGAGUEM  TYPE FLOAT,
+       C_REAL(2) TYPE C  VALUE 'R$',
+       DISTANCIA TYPE P DECIMALS 2.
+
+SELECT COD_AERO, COORDX, COORDY, TAXA_EMBARQUE, TAXA_BAGAGUEM
+
+FROM ZAEROPORTO
+INTO TABLE @DATA(LT_VOO).
+
+IF SY-SUBRC = 0.
+
+LOOP AT LT_VOO INTO DATA(LWA_VOO).
+   IF LWA_VOO-COD_AERO = WV_SEL. "  ORIGEM
+      COORDX_EMBARQUE = LWA_VOO-COORDX.
+      COORDY_EMBARQUE = LWA_VOO-COORDY.
+      TAXA_EMBARQUE = LWA_VOO-TAXA_EMBARQUE.
+      TAXA_BAGAGUEM = LWA_VOO-TAXA_BAGAGUEM.
+   ENDIF.
+
+   IF LWA_VOO-COD_AERO = WV_DEST. " DESTINO.
+      COORDX_DEST = LWA_VOO-COORDX.
+      COORDY_DEST = LWA_VOO-COORDY.
+
+   ENDIF.
+ENDLOOP.
+
+ENDIF.
+
+DISTANCIA = ( ( COORDX_DEST - ( COORDX_EMBARQUE ) ) * ( COORDX_DEST - ( COORDX_EMBARQUE ) ) ) + ( ( COORDY_DEST - ( COORDY_EMBARQUE )  ) * ( COORDY_DEST - ( COORDY_EMBARQUE )  ) ).
+
+DISTANCIA = ( SQRT( DISTANCIA ) ) .
+
+DISTANCIA = DISTANCIA * C_MULT.
+
+IF V_QUANT > 0.
+
+  DISTANCIA = ( V_QUANT * ( DISTANCIA  + TAXA_EMBARQUE ) ) + ( V_MALAS * TAXA_BAGAGUEM ).
+
+  MESSAGE I003(ZMENSAGEM16) WITH  C_REAL  DISTANCIA.
+  CLEAR DISTANCIA.
+
+
+ELSE.
+
+  MESSAGE 'FAVOR ENTRAR COM A QUANTIDE DE PASSAGEIROS' TYPE 'I'.
+ENDIF.
+
+ENDFORM.
+
+_______________________________

@@ -1,0 +1,232 @@
+*&---------------------------------------------------------------------*
+*& Report ZSELECT16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZSELECT16.
+tables: mara.
+
+CONSTANTS: c_verdadeiro(1) type c value 'X'.
+
+PARAMETERS: p_materi type MARA-matnr.
+
+SELECT-OPTIONS: s_tipo for   MARA-mtart.
+
+Parameters: r_s1      RADIOBUTTON GROUP g1." Single 1 campo.
+Parameters: r_s3      RADIOBUTTON GROUP g1." Single vários campos
+Parameters: r_upto    RADIOBUTTON GROUP g1. "Up to 1 rows.
+Parameters: r_into RADIOBUTTON GROUP g1." into table
+Parameters: r_inner   RADIOBUTTON GROUP g1."inner join
+Parameters: r_Fae     RADIOBUTTON GROUP g1. "into table
+
+
+
+*Single 1 campo
+"singel vários campos
+"up to 1 rows
+"into table
+"inner join
+
+"For all entries
+START-OF-SELECTION.
+CASE c_verdadeiro.
+    WHEN r_s1. "single 1 campo.
+      PERFORM f_select_single_1_campo.
+    WHEN r_s3. "single vários campos
+      PERFORM f_select_single_varios_campos.
+    WHEN r_upto. "up to 1 rows.
+
+    WHEN r_into." into table
+      PERFORM f_into.
+    WHEN r_inner. "Inner Join
+      PERFORM f_inner_join.
+    WHEN r_FAe. "FOR ALL ENTRIES.
+      PERFORM  f_for_all_entries.
+
+ENDCASE.
+
+FORM f_select_single_1_campo.
+  " ERNAM.
+  " SELEÇÃO DE APENAS 1 LINHA TRAZENDO APENAS 1 CAMPO.
+  " UMA LINHA E UM VALOR.
+"USUARIO CRIADOR
+  DATA: vl_ernam TYPE mara-ernam.
+  DATA: v1_bismat type mara-bismt.
+ SELECT SINGLE ERNAM
+    FROM MARA
+   INTO vl_ernam
+   WHERE MATNR = p_materi.
+   if sy-subrc is not INITIAL.
+   MESSAGE e002(00). "entrar um valor válido.
+
+   endif.
+
+
+"NUMERO DE MARTERIAL ANTIGO
+   select SINGLE   BISMT
+     from mara
+     INTO v1_bismat
+     WHERE MATNR = p_materi.
+
+if sy-subrc is not INITIAL.
+    "Sem mensagem.
+
+ endif.
+
+
+ENDFORM.
+
+
+FORM f_select_single_varios_campos.
+
+  DATA: vl_ernam type mara-ernam.
+  DATA: vl_ersda type mara-ersda.
+  DATA: vl_mtart type mara-mtart.
+  TYPES : begin of ty_material,
+     ERNAM type MARA-ernam,
+     ERSDA type MARA-ersda,
+     MTART type MARA-mtart,
+     end of ty_material.
+
+DATA: w_material type ty_material. "criou uma workarea com 03 campos.
+  SELECT SINGLE ernam ersda mtart
+    from MARA
+    into w_material "( vl_ernam, vl_ersda, vl_mtart )
+    where matnr = p_materi.
+
+ if sy-subrc is not INITIAL.
+ endif.
+
+
+DATA: w_todos type mara. " utilizando a tabela inteira com os campos, caso a tabela aumenta ou reduzir.
+SELECT SINGLE * " está selecionando todos os campos da tabela
+  FROM MARA
+  INTO w_todos
+  where matnr = p_materi.
+
+if sy-subrc is not initial.
+"não pode fazer um PERFORM.
+endif.
+ENDFORM.
+
+FORM f_into.
+*data: t_material TYPE TABLE OF ty_material.
+*
+*select ernam ersda mtart
+*  from mara
+*  into table ty_material
+*  where matnr = p_materi.
+
+ENDFORM.
+
+    "Sem mensagem.
+"SY-SUBRC DE ZERO É PORQUE FUNCIONOU O SELECT NA ESTRUTURA. TEM QUE FAZER O IF SY-SUBRC  EM TODO O
+*&---------------------------------------------------------------------*
+*& Form f_for_all_entries
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_for_all_entries .
+"MAKT - TABELA DE DESCRIÇÃO DE MATERIAL. temos duas chaves no MKT - MATNR E SPRAS.
+"MATERIAL | DESCRIÇÃO | DATA DE CRIAÇÃO
+ TYPES: BEGIN OF ty_material,
+         matnr type mara-matnr,
+         ersda type mara-ersda,
+   end of ty_material.
+
+data: t_material type table of ty_material.
+DATA: w_material TYPE ty_material.
+   SELECT matnr ersda
+     from mara
+     into TABLE t_material
+     where mtart in s_tipo.
+
+     if sy-subrc is  initial.
+
+       sort t_material by  matnr.
+
+       types: BEGIN OF ty_descricao,
+         matnr type makt-matnr,
+         maktx type makt-maktx,
+         END OF ty_descricao.
+         data: t_descricao TYPE TABLE OF ty_descricao.
+         data: w_descricao type  ty_descricao.
+
+       SELECT MATNR MAKTX
+         FROM  MAKT
+         INTO TABLE t_descricao
+         for ALL ENTRIES IN t_material
+         where matnr = t_material-matnr.
+
+IF SY-SUBRC IS INITIAL.
+    sort t_descricao by matnr.
+
+    LOOP AT t_material into w_material.
+      write: / w_material-matnr.
+      read TABLE t_descricao into w_descricao
+      with key matnr = w_material-matnr
+      BINARY SEARCH.
+
+      if sy-subrc is initial. "achou a linha da tabela T_descricao
+        write: w_descricao-maktx.
+      endif.
+      write:/ w_material-ersda.
+
+ENDLOOP.
+
+ENDIF.
+      ENDIF.
+
+
+
+
+ENDFORM.
+
+
+"relatorio
+**"MATERIAL   | DESCRIÇÃO  | DATA
+" MARA-MATNR  | MAKT-MAKTX
+*&---------------------------------------------------------------------*
+*& Form f_inner_join
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+
+*&---------------------------------------------------------------------*
+FORM f_inner_join .
+"materila descrição data de criação.
+ types: BEGIN OF ty_material,
+        matnr type mara-matnr,
+        maktx type makt-maktx,
+        ersda type mara-ersda.
+
+   TYPES END OF  TY_MATERIAL.
+
+ data: t_join TYPE TABLE of ty_material.
+ data: w_join type ty_material.
+
+ SELECT MARA~MATNR
+        MAKT~MAKTX
+        MARA~ERSDA "DATA DE CRIAÇÃO
+   FROM MARA
+   inner join makt on makt~MATNR = MARA~MATNR
+*   INner join marb on marb~matnr = mara~matnr
+*   INner join mard on mard~matnr = mara~matnr
+*
+   INTO TABLE t_join
+   WHERE MTART IN s_tipo.
+
+ if  sy-subrc is initial.
+
+   LOOP AT t_join into w_join.
+
+     write:/ w_join.
+
+   ENDLOOP.
+ endif.
+
+
+ENDFORM.

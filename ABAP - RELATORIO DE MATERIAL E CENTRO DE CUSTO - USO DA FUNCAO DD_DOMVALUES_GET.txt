@@ -1,0 +1,141 @@
+*&---------------------------------------------------------------------*
+*& Report ZABAP_EXERC12_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZABAP_EXERC12_16.
+
+TABLES: MARA,
+        MAKT,
+        MARC,
+        T001W,
+        DD07V.
+
+DATA: T_OUTPUT TYPE TABLE OF  ZABAP_ESTRUTURA12. "DECLARO UM PERFORM PARA O ALV - DEPOIS UM PERFORM PARA MONTAR O ALV - CRIAR UM TABELA TEMPORARIA PARA O ALV.
+DATA: T_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV.
+DATA: W_LAYOUT TYPE SLIS_LAYOUT_ALV.
+DATA: LW_DD07V TYPE  TABLE OF DD07V.
+
+SELECTION-SCREEN: BEGIN OF BLOCK b1 WITH FRAME TITLE text-001.
+SELECT-OPTIONS: p_mat for mara-matnr.
+SELECT-OPTIONS: p_centro for marc-werks.
+selection-SCREEN: END OF BLOCK b1.
+
+START-OF-SELECTION.
+
+PERFORM F_SELECAO.
+PERFORM F_ALV.
+
+*&---------------------------------------------------------------------*
+*& Form F_ALV
+*&---------------------------------------------------------------------*
+FORM f_alv .
+
+PERFORM F_MONTA_ALV.
+
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+EXPORTING
+    IS_LAYOUT                         = W_LAYOUT
+    IT_FIELDCAT                       = T_FIELDCAT
+  TABLES
+    t_outtab                          = T_OUTPUT
+ EXCEPTIONS
+   PROGRAM_ERROR                     = 1
+   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_MONTA_ALV
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_monta_alv .
+
+CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+  EXPORTING
+    I_STRUCTURE_NAME             ='ZABAP_ESTRUTURA12'
+  CHANGING
+    ct_fieldcat                  = T_FIELDCAT
+ EXCEPTIONS
+   INCONSISTENT_INTERFACE       = 1
+   PROGRAM_ERROR                = 2
+   OTHERS                       = 3
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_SELECAO
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_selecao .
+
+PERFORM F_ELIMINACAO.
+
+  DATA: LT_OUTPUT TYPE ZABAP_ESTRUTURA12.
+  SELECT MARA~MATNR,
+         MAKT~MAKTX,
+         MARA~LVORM,
+         MARC~WERKS,
+         T001W~NAME1
+
+  FROM MARA
+  INNER JOIN MAKT ON MAKT~MATNR   = MARA~MATNR AND MAKT~SPRAS = @SY-LANGU
+  INNER JOIN MARC ON MARC~MATNR   = MARA~MATNR
+  INNER JOIN T001W ON T001W~WERKS = MARC~WERKS
+  INTO TABLE @DATA(LT_MARA)
+  WHERE MARA~MATNR IN @P_MAT AND MARC~WERKS IN @P_CENTRO.
+  IF SY-SUBRC IS INITIAL .
+      LOOP AT LT_MARA INTO DATA(LW_AUX).
+      MOVE-CORRESPONDING LW_AUX TO LT_OUTPUT.
+      READ TABLE DD07V.
+
+*      CASE DD07V-DDTEXT.
+*        WHEN 'SIM'.
+*        MESSAGE I001(00)  WITH DD07V-DDTEXT.
+*        BREAK-POINT.
+*        WHEN 'NAO'.
+*          MESSAGE I001(00)  WITH DD07V-DDTEXT.
+*        BREAK-POINT.
+*        WHEN OTHERS.
+*        ENDCASE.
+
+      APPEND LW_AUX TO T_OUTPUT.
+     ENDLOOP.
+  ENDIF.
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_ELIMINACAO
+*&-------------   PERFORM F_ELIMINACAO.
+*--------------------------------------------------------*
+FORM F_ELIMINACAO.
+
+CALL FUNCTION 'DD_DOMVALUES_GET'
+  EXPORTING
+    domname              = 'XFELD'
+    TEXT                 = 'X'
+    LANGU                = SY-LANGU
+   BYPASS_BUFFER        =  'X'
+* IMPORTING
+*   RC                   =
+  tables
+    dd07v_tab            = LW_DD07V
+ EXCEPTIONS
+   WRONG_TEXTFLAG       = 1
+   OTHERS               = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+ENDFORM.

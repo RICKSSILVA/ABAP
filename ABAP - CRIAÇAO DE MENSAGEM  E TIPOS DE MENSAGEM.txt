@@ -1,0 +1,37 @@
+*&---------------------------------------------------------------------*
+*& Report ZEXERCICIO05_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZEXERCICIO05_16.
+
+PARAMETERS: p_valor type  i .
+
+START-OF-SELECTION.
+
+if p_valor < 0.
+  MESSAGE I000(ZMENSAGEM16) .
+ENDIF.
+
+
+IF p_valor >= 1 and p_valor <= 9.
+
+ endif.
+
+if p_valor > 10.
+  "Informação invalida.
+* MESSAGE S002(00) DISPLAY LIKE 'W'."condição de sucesso.
+  MESSAGE I001(ZMENSAGEM16)
+  DISPLAY LIKE 'E'
+  WITH p_valor
+        sy-datum
+        sy-uname
+        sy-uzeit.
+endif.
+
+IF p_valor = 0.
+  "aviso que zero pode dar problema.
+ MESSAGE I971(00).
+ ENDIF.
+
+WRITE: p_valor.

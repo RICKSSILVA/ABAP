@@ -1,0 +1,96 @@
+*&---------------------------------------------------------------------*
+*& Report Z_EXERCICIO_03_01_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT Z_EXERCICIO_03_01_16.
+
+DATA v_cont TYPE i.
+data v_duplo TYPE I.
+
+v_cont = 0.
+v_cont = v_cont + 1.
+
+v_duplo = 0.
+v_duplo = v_duplo + 1.
+data teste type i.
+
+PARAMETERS: quant TYPE I OBLIGATORY.
+PARAMETERS: pg1 RADIOBUTTON GROUP g1,
+            pg2 RADIOBUTTON GROUP g1.
+
+PARAMETERS: chk AS CHECKBOX,
+            chk1 AS CHECKBOX.
+
+START-OF-SELECTION.
+
+CASE  'X'.
+
+   WHEN pg1.
+
+DO.
+
+IF v_cont <= quant.
+
+
+      IF chk = 'X'.
+
+         teste = v_cont MOD 2.
+
+         IF teste <> 0.
+*           write:/' Estou usando o DO ' COLOR 6.
+            WRITE:/'O valor é impar - Rotina Do.', v_cont COLOR 6.
+         ENDIF.
+      IF chk1 = 'X'.
+         teste = v_cont MOD 2.
+          IF teste = 0.
+            WRITE:/'O valor é MuLTIPLO DE 10 - rotina do Do.', v_cont COLOR 4.
+          endif.
+      ENDIF.
+*             write: v_cont COLOR 6.
+            v_cont = v_cont + 1.
+      ELSE.
+          write: ' Estou usando o DO', v_cont.
+          v_cont = v_cont + 1.
+      ENDIF.
+ELSE.
+
+
+   EXIT.
+
+
+
+ENDIF.
+
+ENDDO.
+
+
+  WHEN pg2.
+
+
+WHILE v_duplo <= quant.
+
+    IF chk = 'X'.
+               teste = v_duplo MOD 2.
+
+         IF teste <> 0.
+*           write:/' Estou usando o DO ' COLOR 6.
+            WRITE:/'O valor é impar', v_duplo COLOR 6.
+         ENDIF.
+       IF chk1 = 'X'.
+         teste = v_duplo MOD 2.
+          IF teste = 0.
+            WRITE:/'O valor é MuLTIPLO DE 10', v_duplo COLOR 4.
+          endif.
+      ENDIF.
+
+*      write: / ' Estou usando o While ' COLOR 6.
+*      write: v_duplo COLOR 6.
+      v_duplo = v_duplo + 1.
+
+    ELSE.
+      write: / ' Estou usando o While ', v_duplo.
+      v_duplo = v_duplo + 1.
+    ENDIF.
+ENDWHILE.
+ENDCASE.

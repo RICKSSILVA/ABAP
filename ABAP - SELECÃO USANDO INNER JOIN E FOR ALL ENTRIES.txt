@@ -1,0 +1,103 @@
+*&---------------------------------------------------------------------*
+*& Report ZSEXEC_SELECAO16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZSEXEC_SELECAO16.
+
+
+" VBAK - AURT
+" VBAK - VBELN
+" VBAK - POSNR
+" VBAN - MATNR
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" VBAP - VBENN
+" VBAK - VBELN
+*" DOCUMENTO        |   ITEM           |    DESCRIÇÃO  MATERIAL
+"  VBAP- VBENN      |   VBAP - POSNR   |    MAKE - MAKTX
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""''"'
+"TABELA HEAD E ITEM - UTILIZAR O JOIN
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+TABLES: VBAK,
+        VBAP,
+        MAKT.
+
+SELECTION-SCREEN: BEGIN OF BLOCK  B1 WITH FRAME TITLE TEXT-001.
+
+SELECT-OPTIONS: s_tipo for VBAK-AUART.
+
+SELECTION-SCREEN: END OF BLOCK B1.
+
+
+SELECTION-SCREEN: BEGIN OF BLOCK B2 WITH FRAME TITLE TEXT-002.
+
+parameters: c_idioma(2) type C.
+SELECTION-SCREEN: END OF BLOCK B2.
+
+
+START-OF-SELECTION.
+PERFORM f_inner_join.
+"&---------------------------------------------------------------------*
+*& Form f_inner_join
+*&---------------------------------------------------------------------*
+*& Seleção unindo duas tabelas ou mais
+*&---------------------------------------------------------------------*
+FORM f_inner_join .
+  TYPES: BEGIN OF ty_material,
+           AUART TYPE VBAK-AUART,
+           VBELN TYPE VBAP-VBELN,
+           POSNR TYPE VBAP-POSNR,
+           MATNR TYPE VBAP-MATNR,
+         END OF ty_material.
+  DATA: t_join TYPE TABLE OF ty_material.
+  DATA: w_join TYPE ty_material.
+  "Material|Descrição|Data de Criação
+  SELECT VBAK~AUART
+         VBAP~VBELN
+         VBAP~POSNR
+         VBAP~MATNR "Data de criação
+    FROM VBAK
+    INNER JOIN VBAP ON VBAP~VBELN = VBAK~VBELN
+    into TABLE t_join
+    where VBAK~AUART in s_tipo.
+
+ if sy-subrc is INITIAL.
+   "FAE"
+ TYPES: BEGIN OF ty_descricao,
+          MATNR TYPE MAKT-MATNR,
+          MAKTX TYPE MAkt-MAKTx,
+ END OF ty_descricao.
+
+ DATA: t_descricao TYPE TABLE OF ty_descricao.
+ DATA: w_descricao TYPE ty_descricao.
+
+    SELECT MATNR MAKTX
+      FROM makt
+      INTO TABLE t_descricao
+      FOR ALL ENTRIES IN t_join
+      WHERE matnr = t_join-matnr and spras = c_idioma.
+
+    IF sy-subrc IS INITIAL.
+      sort t_descricao by MATNR.
+
+       LOOP at t_join into  w_join. "NÃO ESQUECER DO LOOP.
+
+        "WRITE: / w_material-matnr. "Material.
+        WRITE: / w_join-VBELN RIGHT-JUSTIFIED, '|',  w_join-POSNR RIGHT-JUSTIFIED, '|'.
+
+        READ TABLE t_descricao INTO w_descricao
+        WITH KEY matnr = w_join-matnr
+                 BINARY SEARCH.
+
+        IF sy-subrc IS INITIAL. "Achou a linha na tabela T_DESCRICAO
+          WRITE:  w_descricao-MAKTX, '|'.
+        ENDIF.
+
+      ENDLOOP.
+
+
+
+
+    endif.
+endif.
+ENDFORM.

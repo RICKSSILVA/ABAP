@@ -1,0 +1,49 @@
+*&---------------------------------------------------------------------*
+*& Report Z_AULA3_0116
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT z_aula3_0116.
+*& Include Z_AULA3_16
+*&---------------------------------------------------------------------*
+PARAMETERS: p_cor(15) TYPE c.
+
+START-OF-SELECTION.
+  "vermelho - verde e azul.
+
+  IF p_cor ='VERDE'.
+    WRITE:/ TEXT-001 COLOR 5. "6=VERMELHO
+  ENDIF.
+
+  IF p_cor = 'VERMELHO'.
+    WRITE:/ TEXT-001 COLOR 6. "6=VERMELHO
+  ENDIF.
+
+  CASE  p_cor..
+    WHEN 'VERMELHO' OR 'CINZA'.
+      WRITE:/ TEXT-001 COLOR 6. "6=VERMELHO
+
+    WHEN 'VERDE'.
+      WRITE:/ TEXT-001 COLOR 5. "6=VERMELHO
+    WHEN 'AZUL'.
+      WRITE:/ TEXT-001 COLOR 4. "6=VERMELHO
+    WHEN OTHERS.
+
+      WRITE:/ TEXT-001 COLOR 7. "6=VERMELHO
+  ENDCASE.
+*SELECTION-SCREEN:
+  PARAMETERS: p_amar RADIOBUTTON GROUP g1,
+              p_purp RADIOBUTTON GROUP g1,
+              p_cinz RADIOBUTTON GROUP g1.
+  CASE 'X'.
+
+    WHEN p_amar.
+      WRITE:/ TEXT-001 COLOR 3. "6=VERMELHO
+
+    WHEN p_purp.
+      WRITE:/ TEXT-001 COLOR 7. "7=PURPURA
+
+    WHEN p_cinz.
+      WRITE:/ TEXT-001 COLOR 1. "6=VERMELHO
+
+  ENDCASE.

@@ -1,0 +1,198 @@
+*&---------------------------------------------------------------------*
+*& Report ZABAP_EXEMPLO11_16
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZABAP_EXEMPLO11_16.
+TABLES: ZCLIENTE16, ZFILME16.
+
+data: t_output type table of ZEXEMP11_OUTPUT.
+DATA: T_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV.
+DATA: W_LAYOUT TYPE SLIS_LAYOUT_ALV.
+
+SELECT-OPTIONS:P_CODIGO  FOR ZCLIENTE16-COD_CLIENTE16.
+*
+*SELECTION-SCREEN: BEGIN OF BLOCK B1 WITH FRAME TITLE TEXT-001.
+*PARAMETERS: p_codigo type zcliente16-cod_cliente16 OBLIGATORY.
+*SELECTION-SCREEN: END OF BLOCK B1.
+
+
+START-OF-SELECTION.
+
+PERFORM f_selecoes.
+
+PERFORM f_alv.
+
+FORM f_selecoes.
+
+********************************************************************************************
+*DATA: lt_cliente type TABLE OF zcliente16. " A VERSÃO ANTIGA TEMOS QUE DECLARA ESSA LINHA *
+*DATA: LW_CLIENTE TYPE ZCLIENTE16,          " E ESSA LINHA TAMBÉM.                         *
+********************************************************************************************
+
+
+DATA:      LW_OUTPUT TYPE ZEXEMP11_OUTPUT.
+
+SELECT ZCLIENTE16~COD_CLIENTE16,          "CAMPOS DA ZCLIENTE
+       ZCLIENTE16~NOME AS NOME_CLIENTE,   "CAMPOS DA ZCLIENTE
+       ZCLIENTE16~VIP,           "CAMPOS DA ZCLIENTE
+       ZLOCADORA16~DATA,         "CAMPOS DA ZLOCADORA
+       ZLOCADORA16~HORA,
+       ZLOCADORA16~PAGO,
+       ZFILME16~NOME AS NOME_FILME
+
+  FROM ZCLIENTE16               "TABELA PRIMARIA
+  INNER JOIN ZLOCADORA16
+  ON ZCLIENTE16~COD_CLIENTE16 = ZLOCADORA16~COD_CLIENTE                  "TABELA SECUNDÁRIA
+  INNER JOIN  ZFILME16
+  ON ZFILME16~COD_FILME = ZLOCADORA16~COD_FILME
+  INTO TABLE @DATA(LT_CLIENTE)
+  WHERE ZCLIENTE16~COD_CLIENTE16 IN @P_CODIGO.
+
+*SELECT *
+*  FROM ZCLIENTE16
+*  INTO TABLE lt_cliente
+*  WHERE cod_cliente16 in p_codigo.
+
+
+*select *
+*  from zcliente16
+*  into TABLE t_output
+*  where cod_cliente16 = p_codigo.
+
+  IF sy-subrc is initial.
+*    LOOP AT lt_cliente into lw_cliente.
+     LOOP AT LT_CLIENTE INTO DATA(LW_CLIENTE).
+      MOVE-CORRESPONDING LW_CLIENTE TO LW_OUTPUT.
+      " lw_output-cod_cliente16  = lw_cliente-cod_cliente16.
+       MOVE lw_CLIENTE-NOME_CLIENTE TO  lw_OUTPUT-NOME.
+       "lw_output-vip            = lw_cliente-vip.
+       MOVE LW_CLIENTE-NOME_FILME  TO lw_OUTPUT-FILME.
+       append lw_output to t_output.
+
+    ENDLOOP.
+
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_alv
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_alv .
+
+PERFORM f_monta_alv.
+
+W_LAYOUT-ZEBRA             = 'X'.
+W_LAYOUT-COLWIDTH_OPTIMIZE = 'X'.
+W_LAYOUT-BOX_FIELDNAME     = 'MARK'.
+
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+ EXPORTING
+   I_CALLBACK_PROGRAM                = SY-CPROG " ZABAP_EXEMPLO11_16
+   I_CALLBACK_PF_STATUS_SET          = 'F_PF_STATUS_SET'
+   I_CALLBACK_USER_COMMAND           = 'F_USER_COMMAND'
+   IS_LAYOUT                         = W_LAYOUT
+   IT_FIELDCAT                       = T_FIELDCAT
+* IMPORTING
+*   E_EXIT_CAUSED_BY_CALLER           =
+*   ES_EXIT_CAUSED_BY_USER            =
+  TABLES
+    t_outtab                          = t_output
+ EXCEPTIONS
+   PROGRAM_ERROR                     = 1
+   OTHERS                            = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_monta_alv
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM f_monta_alv .
+
+  "MONTAR O LAYOUT.
+
+
+
+CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+ EXPORTING
+*   I_PROGRAM_NAME               =
+*   I_INTERNAL_TABNAME           =
+    I_STRUCTURE_NAME             = 'ZEXEMP11_OUTPUT'
+*   I_CLIENT_NEVER_DISPLAY       = 'X'
+*   I_INCLNAME                   =
+*   I_BYPASSING_BUFFER           =
+*   I_BUFFER_ACTIVE              =
+  CHANGING
+    ct_fieldcat                  = T_FIELDCAT
+ EXCEPTIONS
+   INCONSISTENT_INTERFACE       = 1
+   PROGRAM_ERROR                = 2
+   OTHERS                       = 3
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+DELETE T_FIELDCAT WHERE FIELDNAME = 'MARK'.
+
+
+LOOP AT T_FIELDCAT INTO DATA(LW_FIELDCAT).
+  CASE LW_FIELDCAT-FIELDNAME.
+    WHEN 'VIP'.
+       LW_FIELDCAT-SELTEXT_L = 'VIP'.
+       LW_FIELDCAT-SELTEXT_M = 'VIP'.
+       LW_FIELDCAT-SELTEXT_S = 'VIP'.
+       LW_FIELDCAT-REPTEXT_DDIC = 'VIP'.
+
+       MODIFY T_FIELDCAT FROM LW_FIELDCAT INDEX SY-TABIX.
+
+    WHEN OTHERS.
+   ENDCASE.
+ ENDLOOP.
+
+ENDFORM.
+
+FORM F_PF_STATUS_SET USING XT_EXCLUDING_MERGER. " TEMOS QUE INSERIR ESSE COMANDO USING XT_EXCLUIDNG_MERGED SENÃO IRÁ DAR DUMP.
+  SET PF-STATUS 'STATUS_GUI_ALV'.
+
+ENDFORM.
+
+
+FORM F_USER_COMMAND USING UCOMM
+                          XS_SELFIELD. "TEMOS QUE INSEIR ESSE COMANDO USING UCOM  E XS_SELFIELD  SENÃO IRÁ DAR DUMP.
+
+  CASE SY-UCOMM.
+    WHEN  'BOTAO'.
+      PERFORM F_EXECUTADO_BOTAO.
+
+
+      WHEN OTHERS.
+ ENDCASE.
+ ENDFORM.
+
+ FORM F_EXECUTADO_BOTAO.
+
+  LOOP at T_OUTPUT INTO DATA(LW_OUTPUT).
+
+   CASE LW_OUTPUT-MARK.
+    WHEN 'X'.
+   MESSAGE I001(00) WITH lw_OUTPUT-FILME.
+   WHEN OTHERS.
+   ENDCASE.
+   ENDLOOP.
+ ENDFORM.

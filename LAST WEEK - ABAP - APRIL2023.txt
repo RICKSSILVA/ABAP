@@ -1,0 +1,177 @@
+business workplace ou mybox
+
+business workplace não é mais que uma caix de email que o usuario pode enviar mensgaem ou executar uma atividade.
+
+
+BOR - LOGICA SEMPRE NESSE MODULO.
+MONTAR O ESQUELETO ANTES DO WORKFLOW.
+SWO1 - TRANSAÇÃO PARA CRIAÇÃO
+
+INTERFACES EM DESUSO
+CAMPOS CHAVE
+ATRIBUTOS
+MÉTODOS
+EVENTOS
+
+
+CAMPOS MESTRES.
+
+SWUE -USADO PARA TESTA OS EVENTOS.
+_________________________r_____________________________________________
+25-04-2023.
+
+
+PFTC - PARA INICIAR O MODULO PARA A CRIAÇÃO DO WORKFLOW.
+VAMOS USAR O TS E O WS.
+
+SWUE - PARA VERIFICAR A EXECUÇÃO E RASTREAMENTO DE EVENTOS DO WORKFLOW.
+
+SWDD - PARA TAREFA.
+
+SWIA - VERIFICAR O FLUXO DE EVENTOS
+
+_____________________________________
+
+
+26-04-2023 
+teacher barbara
+SAP BTP - CLOUD CONCEPTS
+
+
+https://www.sap.com/
+
+https://www.postman.com/downloads/
+
+https://account.hanatrial.ondemand.com/trial/#/home/trial
+
+
+
+_____________________________________
+27-04-2023 
+teacher Kaio.
+
+FIORI
+
+_____________________________________
+                   |
+                   | 
+		     	  \|/						
+                   | 
+_____________________________________
+
+ODATA.- Objeto cheio de classe subdivido em controle .
+ODATA - API PARA CONSUMO DE RECURSO DO SAP.
+crud - create, reader, update e delete.
+
+WWW.ODATA.ORG
+
+GATEWAY É O BACKEND DO ABAP.
+
+_____________________________________
+
+
+SEGW - INICIAR O A CRIACAO DO PROJETO PARA CONSUMO DO ODATA.
+
+
+
+/n/iwfnd/maint_service - > ativação e atualização de serviços.
+
+/OSE24 
+
+
+
+{ "NMatnr": "016",
+  "Nome":"Lista de Schindler",
+  "Valor": "98.76",
+  "Moeda":"BRL",
+  "Estoque": "100",
+  "UnidadeEst": "UN"
+}
+
+
+
+
+
+_____________________________________
+
+
+https://services.odata.org/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+https://services.odata.org/V2/(S(4bzs3z2zjil2gkhprsyg2wyl))/OData/OData.svc/Products?$format=json
+
+consumir os dados do odata.
+
+https://services.odata.org/V2/(S(4bzs3z2zjil2gkhprsyg2wyl))/OData/OData.svc
+
+1sap fiori
+
+list report page
+
+No front só utilizamos o view e o controller.
+
+localservice - metadata que pegou dos serviços
+i18n - propriedade dos 
+controller - fica todo o código do javascript.
+
+model - modelo da aplicação e um formate. o modelo é de acordo da suite da aplicação.
+ 
+ 
+ 
+ui5.sap.com/ biblioteca d
+
+
+
+
+
+
+
