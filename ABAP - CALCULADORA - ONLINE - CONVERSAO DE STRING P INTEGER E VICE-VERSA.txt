@@ -1,0 +1,143 @@
+*&---------------------------------------------------------------------*
+*& Report ZCALCULADORA
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZCALCULADORA.
+DATA WS_TECLA(4) TYPE C.
+
+INCLUDE ZCALCULADORAI_TOP.
+"INCLUDE ZCALCULADORAI_PBO.
+"INCLUDE ZCALCULADORAI_PAI.
+INCLUDE ZCALCULADORAI_F01.
+
+START-OF-SELECTION.
+
+
+CALL SCREEN 9000.
+
+
+*&---------------------------------------------------------------------*
+*& Include          ZCALCULADORAI_TOP
+*&---------------------------------------------------------------------*
+DATA V_UM     TYPE P DECIMALS 2 VALUE 1.
+DATA V_DOIS   TYPE P DECIMALS 2 VALUE 2.
+DATA V_TRES   TYPE P DECIMALS 2 VALUE 3.
+DATA V_FOUR   TYPE P DECIMALS 2 VALUE 4.
+DATA V_FIVE   TYPE P DECIMALS 2 VALUE 5.
+DATA V_SIX    TYPE P DECIMALS 2 VALUE 6.
+DATA V_SET    TYPE P DECIMALS 2 VALUE 7.
+DATA V_OITO   TYPE P DECIMALS 2 VALUE 8.
+DATA V_NOVE   TYPE P DECIMALS 2 VALUE 9.
+DATA V_ZERO   TYPE P DECIMALS 2 VALUE 0.
+"DATA V_EQUAL  TYPE P DECIMALS 2.
+"DATA V_CLEAR  TYPE P DECIMALS 2.
+"DATA V_ADD    TYPE P DECIMALS 2.
+"DATA V_SUBR   TYPE P DECIMALS 2.
+"DATA V_MULT   TYPE P DECIMALS 2.
+"DATA V_DIV    TYPE P DECIMALS 2.
+DATA  WC_DISPLAY(38) TYPE C.
+DATA  WC_AUXIL(38) TYPE C.
+DATA  WC_INT(38) TYPE I.
+DATA  WC_INT2 TYPE I VALUE 0.
+DATA  WC_INT3 TYPE I VALUE 0.
+DATA  WC_INT4 TYPE I VALUE 0.
+DATA  VCLEAR(38) TYPE C.
+DATA OPCAO TYPE I.
+TABLES: MARA.
+
+
+*&---------------------------------------------------------------------*
+*& Include          ZCALCULADORAI_F01
+*&---------------------------------------------------------------------*
+
+
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_9000  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_9000 INPUT.
+PERFORM F_USER_COMMAND_9000.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Form F_USER_COMMAND_9000
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+
+FORM f_user_command_9000.
+
+
+  CASE WS_TECLA.
+
+    WHEN 'UM' .
+      CONCATENATE WC_DISPLAY  '1' INTO WC_DISPLAY.
+    WHEN 'DOIS'.
+      CONCATENATE WC_DISPLAY '2' INTO WC_DISPLAY.
+    WHEN 'TRES'.
+      CONCATENATE WC_DISPLAY '3' INTO WC_DISPLAY.
+    WHEN 'SETE'.
+      CONCATENATE WC_DISPLAY '7' INTO WC_DISPLAY.
+    WHEN 'SEIS'.
+      CONCATENATE WC_DISPLAY '6' INTO WC_DISPLAY.
+    WHEN 'CIN'.
+      CONCATENATE WC_DISPLAY '5' INTO WC_DISPLAY.
+    WHEN 'QUA'.
+      CONCATENATE WC_DISPLAY '4' INTO WC_DISPLAY.
+    WHEN 'OITO'.
+      CONCATENATE WC_DISPLAY '8' INTO WC_DISPLAY.
+    WHEN 'NOVE'.
+      CONCATENATE WC_DISPLAY '9' INTO WC_DISPLAY.
+    WHEN 'ZERO'.
+      CONCATENATE WC_DISPLAY '0' INTO WC_DISPLAY.
+    WHEN 'VADD'.
+      WC_INT = CONV I( WC_DISPLAY ).
+       WC_INT2 = WC_INT + WC_INT2.
+       CLEAR WC_DISPLAY.
+      OPCAO = 1.
+    WHEN 'VEQU'.
+
+      CASE OPCAO.
+        WHEN  1.
+           WC_INT2 = WC_INT2 + CONV I( WC_DISPLAY ).
+          CLEAR WC_DISPLAY.
+          WC_DISPLAY = CONV STRING( WC_INT2 ).
+          CLEAR: WC_INT2, WC_INT.
+       WHEN  2.
+          WC_INT3 = WC_INT3 - CONV I( WC_DISPLAY ).
+          WC_DISPLAY = CONV STRING( WC_INT3 ).
+          CLEAR: WC_INT3, WC_INT4.
+
+       WHEN OTHERS.
+
+       ENDCASE.
+
+    WHEN 'VSUB'.
+       WC_INT4 = CONV I( WC_DISPLAY ).
+       WC_INT3 = WC_INT4 - WC_INT3.
+       OPCAO = 2.
+       CLEAR WC_DISPLAY.
+
+    WHEN 'VCLS'.
+       CLEAR: WC_DISPLAY, WC_INT2, WC_INT.
+    WHEN 'BACK' OR 'ABORTAR' OR 'CANCELAR'.
+    SET SCREEN 0.
+    LEAVE SCREEN.
+
+    WHEN OTHERS.
+  ENDCASE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Module STATUS_9000 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE status_9000 OUTPUT.
+SET PF-STATUS 'STATUS_GUI'.
+* SET TITLEBAR 'xxx'.
+ENDMODULE.
